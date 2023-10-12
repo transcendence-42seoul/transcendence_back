@@ -2,12 +2,14 @@ import { HttpService } from '@nestjs/axios';
 import { Controller, Get, Query, Redirect, Res, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
+import { UserService } from 'src/user/user.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly httpService: HttpService,
     private authService: AuthService,
+    private userService: UserService,
   ) {}
 
   @Get('authorize')
@@ -36,11 +38,13 @@ export class AuthController {
     try {
       // const accessToken = req.headers.authorization.split(' ')[1];
       const accessToken =
-        '2a3fc5b2d0d866c9cae697eabc15bd5d616890ff315187b1978e8cbc64247951';
-      console.log('accessToken:', accessToken);
+        '71732c3fb06af3860da0199fb60f139043899e2c3a6ae01710c0299722988e7b';
       const userInfo = await this.authService.getUserInfoFrom42(accessToken);
 
-      return userInfo.data;
+      const userData = userInfo.data;
+      const user = await this.userService.findOrCreateUser(userData);
+
+      return user;
     } catch (error) {
       throw error;
     }
