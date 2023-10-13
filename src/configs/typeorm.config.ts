@@ -9,5 +9,4 @@ export const typeORMConfig: TypeOrmModuleOptions = {
   database: 'transcendence',
   entities: [__dirname + '/../**/*.entity.{js, ts}'],
   synchronize: true,
-  logging: true,
 };

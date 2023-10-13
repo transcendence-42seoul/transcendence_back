@@ -14,7 +14,6 @@ export class Ranking extends BaseEntity {
   idx: number;
 
   @OneToOne(() => User, {
-    onDelete: 'CASCADE',
     eager: false,
   })
   @JoinColumn({ name: 'user_idx', referencedColumnName: 'idx' })

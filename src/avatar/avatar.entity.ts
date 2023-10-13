@@ -13,7 +13,6 @@ export class Avatar extends BaseEntity {
   idx: number;
 
   @OneToOne(() => User, (user) => user.avatar, {
-    onDelete: 'CASCADE',
     eager: false,
   })
   user: User;

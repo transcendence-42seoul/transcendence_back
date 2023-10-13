@@ -39,6 +39,7 @@ export class User extends BaseEntity {
   @OneToOne(() => Avatar, (avatar) => avatar.user, {
     cascade: true,
     eager: true,
+    onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'avatar' })
   avatar: Avatar;
@@ -46,14 +47,16 @@ export class User extends BaseEntity {
   @OneToOne(() => Record, (record) => record.user_idx, {
     cascade: true,
     eager: true,
+    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'record_idx', referencedColumnName: 'idx' })
+  @JoinColumn({ name: 'record' })
   record: Record;
 
   @OneToOne(() => Ranking, (ranking) => ranking.user_idx, {
     cascade: true,
     eager: true,
+    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'ranking_idx', referencedColumnName: 'idx' })
+  @JoinColumn({ name: 'ranking' })
   ranking: Ranking;
 }

@@ -4,7 +4,7 @@ import { AvatarRepository } from '../avatar/avatar.repository';
 import { RecordRepository } from '../record/record.repository';
 import { RankingRepository } from '../ranking/ranking.repository';
 import { UserDto } from './dto/user.dto';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { User } from './user.entity';
 
 @Injectable()
@@ -54,9 +54,20 @@ export class UserService {
   }
 
   async deleteAll(): Promise<void> {
-    const user = await this.userRepository.find({
-      relations: ['avatar', 'ranking', 'record'],
-    });
-    await this.userRepository.remove(user);
+    const user = await this.userRepository.find({});
+    for (let i = 0; i < user.length; i++) {
+      await this.avatarRepository.remove(user[i].avatar);
+      await this.rankingRepository.remove(user[i].ranking);
+      await this.recordRepository.remove(user[i].record);
+      await this.userRepository.remove(user[i]);
+    }
+  }
+
+  async findId(id: string): Promise<User> {
+    const user = await this.userRepository.findOneBy({ id });
+
+    if (!user) throw new NotFoundException(`User with id ${id} not found`);
+
+    return user;
   }
 }
