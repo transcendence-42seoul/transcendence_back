@@ -4,7 +4,6 @@ import {
   Column,
   Entity,
   OneToOne,
-  JoinColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -13,11 +12,10 @@ export class Record extends BaseEntity {
   @PrimaryGeneratedColumn()
   idx: number;
 
-  @OneToOne(() => User, {
+  @OneToOne(() => User, (user) => user.record, {
     eager: false,
   })
-  @JoinColumn({ name: 'user_idx', referencedColumnName: 'idx' })
-  user_idx: number;
+  user: User;
 
   @Column({ nullable: false })
   total_game: number;
