@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { UserService } from './user.service';
 
 @Controller('user')
@@ -14,7 +14,7 @@ export class UserController {
     });
   }
 
-  @Post('/deleteAll')
+  @Delete('/deleteAll')
   async deleteAll() {
     await this.userService.deleteAll();
   }
