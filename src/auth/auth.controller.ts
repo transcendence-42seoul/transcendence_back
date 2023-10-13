@@ -36,11 +36,17 @@ export class AuthController {
   @Get('profile')
   async getUserInfo(@Req() req): Promise<any> {
     try {
-      // const accessToken = req.headers.authorization.split(' ')[1];
-      const accessToken =
-        '71732c3fb06af3860da0199fb60f139043899e2c3a6ae01710c0299722988e7b';
-      const userInfo = await this.authService.getUserInfoFrom42(accessToken);
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        throw new Error('No authorization header');
+      }
+      const tokenPart = authHeader.split(' ');
+      if (tokenPart.length !== 2 || tokenPart[0] !== 'Bearer') {
+        throw new Error('Invalid authorization header');
+      }
+      const accessToken = tokenPart[1];
 
+      const userInfo = await this.authService.getUserInfoFrom42(accessToken);
       const userData = userInfo.data;
       const user = await this.userService.findOrCreateUser(userData);
 

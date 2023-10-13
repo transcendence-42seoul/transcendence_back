@@ -8,11 +8,8 @@ export class AvatarRepository extends Repository<Avatar> {
     super(Avatar, dataSource.createEntityManager());
   }
 
-  async createAvatar(user_idx: number): Promise<Avatar> {
-    const avatar = this.create({
-      user_idx,
-    });
-
+  async createAvatar(): Promise<Avatar> {
+    const avatar = this.create();
     await this.save(avatar);
     return avatar;
   }

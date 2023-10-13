@@ -13,7 +13,10 @@ export class Record extends BaseEntity {
   @PrimaryGeneratedColumn()
   idx: number;
 
-  @OneToOne(() => User)
+  @OneToOne(() => User, {
+    onDelete: 'CASCADE',
+    eager: false,
+  })
   @JoinColumn({ name: 'user_idx', referencedColumnName: 'idx' })
   user_idx: number;
 

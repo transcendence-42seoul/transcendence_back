@@ -34,14 +34,29 @@ export class UserService {
 
   async signup(userDto: UserDto): Promise<User> {
     try {
-      const user = await this.userRepository.createUser(userDto);
-      await this.rankingRepository.createRanking(user.idx);
-      await this.avatarRepository.createAvatar(user.idx);
-      await this.recordRepository.createRecord(user.idx);
+      const avatar = await this.avatarRepository.createAvatar();
+      const ranking = await this.rankingRepository.createRanking();
+      const record = await this.recordRepository.createRecord();
+
+      const user = await this.userRepository.createUser(
+        userDto,
+        avatar,
+        ranking,
+        record,
+      );
+
+      await this.userRepository.save(user);
 
       return user;
     } catch (error) {
       throw error;
     }
+  }
+
+  async deleteAll(): Promise<void> {
+    const user = await this.userRepository.find({
+      relations: ['avatar', 'ranking', 'record'],
+    });
+    await this.userRepository.remove(user);
   }
 }

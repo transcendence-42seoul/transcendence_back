@@ -1,5 +1,4 @@
 import { IsNotEmpty } from 'class-validator';
-import { User } from '../user.entity';
 
 export class UserDto {
   @IsNotEmpty()
@@ -11,11 +10,11 @@ export class UserDto {
   @IsNotEmpty()
   email: string;
 
-  static convertDto(user: User): UserDto {
+  static convertDto(userData: any): UserDto {
     const userDto = new UserDto();
-    userDto.id = user.id;
-    userDto.nickname = user.nickname;
-    userDto.email = user.email;
+    userDto.id = userData.login;
+    userDto.nickname = userData.login;
+    userDto.email = userData.email;
 
     return userDto;
   }

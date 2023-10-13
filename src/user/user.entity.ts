@@ -1,4 +1,3 @@
-import { Alarm } from 'src/alarm/alarm.entity';
 import { Avatar } from 'src/avatar/avatar.entity';
 import { Ranking } from 'src/ranking/ranking.entity';
 import { Record } from 'src/record/record.entity';
@@ -37,31 +36,24 @@ export class User extends BaseEntity {
   @Column({ nullable: false })
   mfa_enabled: boolean;
 
-  @OneToOne(() => Avatar, (avatar) => avatar.user_idx, {
+  @OneToOne(() => Avatar, (avatar) => avatar.user, {
     cascade: true,
-    onDelete: 'CASCADE',
+    eager: true,
   })
-  @JoinColumn({ name: 'avatar_idx' })
+  @JoinColumn({ name: 'avatar' })
   avatar: Avatar;
 
   @OneToOne(() => Record, (record) => record.user_idx, {
     cascade: true,
-    onDelete: 'CASCADE',
+    eager: true,
   })
-  @JoinColumn({ name: 'record_idx' })
+  @JoinColumn({ name: 'record_idx', referencedColumnName: 'idx' })
   record: Record;
 
   @OneToOne(() => Ranking, (ranking) => ranking.user_idx, {
     cascade: true,
-    onDelete: 'CASCADE',
+    eager: true,
   })
-  @JoinColumn({ name: 'ranking_idx' })
+  @JoinColumn({ name: 'ranking_idx', referencedColumnName: 'idx' })
   ranking: Ranking;
-
-  @OneToOne(() => Alarm, (alarm) => alarm.user_idx, {
-    cascade: true,
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'alarm_idx' })
-  alarm: Alarm;
 }

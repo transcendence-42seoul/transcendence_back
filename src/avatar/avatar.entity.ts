@@ -3,7 +3,6 @@ import {
   BaseEntity,
   Column,
   Entity,
-  JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -13,13 +12,15 @@ export class Avatar extends BaseEntity {
   @PrimaryGeneratedColumn()
   idx: number;
 
-  @OneToOne(() => User)
-  @JoinColumn({ name: 'user_idx', referencedColumnName: 'idx' })
-  user_idx: number;
+  @OneToOne(() => User, (user) => user.avatar, {
+    onDelete: 'CASCADE',
+    eager: false,
+  })
+  user: User;
 
   @Column({ nullable: true })
   name: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'bytea', nullable: true })
   image_data: Buffer;
 }

@@ -8,9 +8,8 @@ export class RecordRepository extends Repository<Record> {
     super(Record, dataSource.createEntityManager());
   }
 
-  async createRecord(user_idx: number) {
+  async createRecord() {
     const record = this.create({
-      user_idx,
       total_game: 0,
       total_win: 0,
       ladder_game: 0,

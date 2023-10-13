@@ -8,9 +8,8 @@ export class RankingRepository extends Repository<Ranking> {
     super(Ranking, dataSource.createEntityManager());
   }
 
-  async createRanking(user_idx: number): Promise<Ranking> {
+  async createRanking(): Promise<Ranking> {
     const ranking = this.create({
-      user_idx,
       score: 1000,
     });
 
