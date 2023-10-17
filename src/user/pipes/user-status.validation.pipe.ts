@@ -10,7 +10,6 @@ export class UserStatusValidationPipe implements PipeTransform {
 
   transform(value: any) {
     value = value.toUpperCase();
-    console.log(value);
 
     if (!this.isStatusValid(value)) {
       throw new BadRequestException(`${value} isn't in the status options`);
