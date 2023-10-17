@@ -2,11 +2,15 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 import { lastValueFrom } from 'rxjs';
+import * as speakeasy from 'speakeasy';
+import * as QRCode from 'qrcode';
+import { TFASecret } from 'src/user/user.entity';
 
 @Injectable()
 export class AuthService {
   constructor(private readonly httpService: HttpService) {}
 
+  //42Oauth
   async getTokenFrom42(code: string): Promise<any> {
     const clientId = `u-s4t2ud-decaba972e71347060f602c587ad21a8158074daa139ecd5dad4dc9faec4f603`;
     const clientSecret = `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`;
@@ -45,5 +49,30 @@ export class AuthService {
     } catch (error) {
       throw error;
     }
+  }
+
+  //Google authentication
+  async generateTFASecret(): Promise<TFASecret> {
+    const secret = speakeasy.generate2FASecret({
+      length: 20,
+      name: 'Transcendence',
+    });
+
+    return {
+      otpauthUrl: secret.otpauth_url,
+      base32: secret.base32,
+    };
+  }
+
+  async generateQRCode(otpauth_url: string): Promise<string> {
+    return QRCode.toDataURL(otpauth_url);
+  }
+
+  async validateTFAToken(tfa_secret: string, token: string) {
+    return speakeasy.totp.verfiy({
+      secret: tfa_secret,
+      encoding: 'base32',
+      token: token,
+    });
   }
 }

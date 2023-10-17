@@ -1,5 +1,15 @@
 import { HttpService } from '@nestjs/axios';
-import { Controller, Get, Query, Redirect, Res, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Redirect,
+  Res,
+  Req,
+  Body,
+  Post,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { UserService } from 'src/user/user.service';
@@ -12,6 +22,7 @@ export class AuthController {
     private userService: UserService,
   ) {}
 
+  //42Oauth
   @Get('authorize')
   @Redirect()
   async loginWith42() {
@@ -54,5 +65,30 @@ export class AuthController {
     } catch (error) {
       throw error;
     }
+  }
+
+  //Google authentication
+  @Get('tfa/enable')
+  async enableTFA(@Req() req): Promise<any> {
+    const tfa_secret = await this.authService.generateTFASecret();
+    const qrCode = await this.authService.generateQRCode(tfa_secret.otpauthUrl);
+
+    await this.userService.updateTFA(req.user.idx, true, tfa_secret);
+
+    return {
+      qrCode,
+      secret: tfa_secret.base32,
+    };
+  }
+
+  @Post('tfa/verify')
+  async verifyTFACode(@Req() req, @Body('token') token) {
+    const isTokenValid = this.authService.validateTFAToken(
+      req.user.tfa_secret,
+      token,
+    );
+    if (isTokenValid) {
+      return { message: 'TFA' };
+    } else throw new UnauthorizedException('Invalid TFA token');
   }
 }

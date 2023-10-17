@@ -16,6 +16,11 @@ export enum UserStatus {
   PLAYING = 'PLAYING',
 }
 
+export interface TFASecret {
+  otpauthUrl: string;
+  base32: string;
+}
+
 @Entity()
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn()
@@ -34,7 +39,10 @@ export class User extends BaseEntity {
   status: UserStatus;
 
   @Column({ nullable: false })
-  mfa_enabled: boolean;
+  tfa_enabled: boolean;
+
+  @Column({ nullable: true })
+  tfa_secret: TFASecret;
 
   @OneToOne(() => Avatar, (avatar) => avatar.user, {
     cascade: true,
