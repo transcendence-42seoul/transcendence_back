@@ -11,9 +11,9 @@ import {
 } from 'typeorm';
 
 export enum UserStatus {
-  ONLINE = 'online',
-  OFFLINE = 'offline',
-  PLAYING = 'playing',
+  ONLINE = 'ONLINE',
+  OFFLINE = 'OFFLINE',
+  PLAYING = 'PLAYING',
 }
 
 @Entity()
