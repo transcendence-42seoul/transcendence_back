@@ -2,12 +2,14 @@ import { HttpService } from '@nestjs/axios';
 import { Controller, Get, Query, Redirect, Res, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
+import { UserService } from 'src/user/user.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly httpService: HttpService,
     private authService: AuthService,
+    private userService: UserService,
   ) {}
 
   @Get('authorize')
@@ -34,13 +36,21 @@ export class AuthController {
   @Get('profile')
   async getUserInfo(@Req() req): Promise<any> {
     try {
-      // const accessToken = req.headers.authorization.split(' ')[1];
-      const accessToken =
-        '2a3fc5b2d0d866c9cae697eabc15bd5d616890ff315187b1978e8cbc64247951';
-      console.log('accessToken:', accessToken);
-      const userInfo = await this.authService.getUserInfoFrom42(accessToken);
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        throw new Error('No authorization header');
+      }
+      const tokenPart = authHeader.split(' ');
+      if (tokenPart.length !== 2 || tokenPart[0] !== 'Bearer') {
+        throw new Error('Invalid authorization header');
+      }
+      const accessToken = tokenPart[1];
 
-      return userInfo.data;
+      const userInfo = await this.authService.getUserInfoFrom42(accessToken);
+      const userData = userInfo.data;
+      const user = await this.userService.findOrCreateUser(userData);
+
+      return user;
     } catch (error) {
       throw error;
     }
