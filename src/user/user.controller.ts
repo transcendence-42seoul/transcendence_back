@@ -57,7 +57,7 @@ export class UserController {
     return this.userService.updateStatus(idx, status);
   }
 
-  @Patch('/update/:idx/mfa')
+  @Patch('/update/:idx/tfa')
   async updateTFA(
     @Param('idx', ParseIntPipe) idx: number,
     @Body('tfa_enabled') tfa_enabled: boolean,
