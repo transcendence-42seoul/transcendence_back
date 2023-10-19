@@ -10,6 +10,7 @@ import {
   Post,
   UnauthorizedException,
   Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
@@ -69,13 +70,15 @@ export class AuthController {
   }
 
   //Google authentication
-  @Post('tfa/switch')
-  async switchTFA(@Param('idx') idx: number): Promise<any> {
+  @Post('tfa/switch/:idx')
+  async switchTFA(@Param('idx', ParseIntPipe) idx: number): Promise<any> {
     try {
       const user = await this.userService.findIdx(idx);
 
-      if (user.tfa_enabled) await this.userService.updateTFA(idx, false, null);
-      else {
+      if (user.tfa_enabled) {
+        await this.userService.updateTFA(idx, false, null);
+        return { message: 'TFA is successfully disabled' };
+      } else {
         const tfa_secret = await this.authService.generateTFASecret();
         const qrCode = await this.authService.generateQRCode(
           tfa_secret.otpauthUrl,
@@ -93,8 +96,11 @@ export class AuthController {
     }
   }
 
-  @Post('tfa/verify')
-  async verifyTFACode(@Param('idx') idx: number, @Body('token') token) {
+  @Post('tfa/verify/:idx')
+  async verifyTFACode(
+    @Param('idx', ParseIntPipe) idx: number,
+    @Body('token') token,
+  ) {
     try {
       const user = await this.userService.findIdx(idx);
 
