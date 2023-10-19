@@ -53,7 +53,7 @@ export class AuthService {
 
   //Google authentication
   async generateTFASecret(): Promise<TFASecret> {
-    const secret = speakeasy.generate2FASecret({
+    const secret = speakeasy.generateSecret({
       length: 20,
       name: 'Transcendence',
     });
@@ -68,11 +68,19 @@ export class AuthService {
     return QRCode.toDataURL(otpauth_url);
   }
 
-  async validateTFAToken(tfa_secret: string, token: string) {
-    return speakeasy.totp.verfiy({
-      secret: tfa_secret,
-      encoding: 'base32',
-      token: token,
-    });
+  async validateTFAToken(
+    tfa_secret: TFASecret,
+    token: string,
+  ): Promise<boolean> {
+    try {
+      return speakeasy.totp.verify({
+        secret: tfa_secret.base32,
+        encoding: 'base32',
+        token: token,
+      });
+    } catch (error) {
+      console.error('Error in validateTFAToken:', error);
+      return false;
+    }
   }
 }

@@ -77,6 +77,14 @@ export class UserService {
     await this.userRepository.remove(user);
   }
 
+  async findIdx(idx: number): Promise<User> {
+    const user = await this.userRepository.findOneBy({ idx });
+
+    if (!user) throw new NotFoundException(`User with idx ${idx} not found`);
+
+    return user;
+  }
+
   async findId(id: string): Promise<User> {
     const user = await this.userRepository.findOneBy({ id });
 

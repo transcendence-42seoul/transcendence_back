@@ -41,7 +41,7 @@ export class User extends BaseEntity {
   @Column({ nullable: false })
   tfa_enabled: boolean;
 
-  @Column({ nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   tfa_secret: TFASecret;
 
   @OneToOne(() => Avatar, (avatar) => avatar.user, {

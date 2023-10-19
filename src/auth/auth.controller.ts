@@ -9,6 +9,7 @@ import {
   Body,
   Post,
   UnauthorizedException,
+  Param,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
@@ -68,27 +69,48 @@ export class AuthController {
   }
 
   //Google authentication
-  @Get('tfa/enable')
-  async enableTFA(@Req() req): Promise<any> {
-    const tfa_secret = await this.authService.generateTFASecret();
-    const qrCode = await this.authService.generateQRCode(tfa_secret.otpauthUrl);
+  @Post('tfa/switch')
+  async switchTFA(@Param('idx') idx: number): Promise<any> {
+    try {
+      const user = await this.userService.findIdx(idx);
 
-    await this.userService.updateTFA(req.user.idx, true, tfa_secret);
+      if (user.tfa_enabled) await this.userService.updateTFA(idx, false, null);
+      else {
+        const tfa_secret = await this.authService.generateTFASecret();
+        const qrCode = await this.authService.generateQRCode(
+          tfa_secret.otpauthUrl,
+        );
 
-    return {
-      qrCode,
-      secret: tfa_secret.base32,
-    };
+        await this.userService.updateTFA(idx, true, tfa_secret);
+
+        return {
+          qrCode,
+          secret: tfa_secret.base32,
+        };
+      }
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Post('tfa/verify')
-  async verifyTFACode(@Req() req, @Body('token') token) {
-    const isTokenValid = this.authService.validateTFAToken(
-      req.user.tfa_secret,
-      token,
-    );
-    if (isTokenValid) {
-      return { message: 'TFA' };
-    } else throw new UnauthorizedException('Invalid TFA token');
+  async verifyTFACode(@Param('idx') idx: number, @Body('token') token) {
+    try {
+      const user = await this.userService.findIdx(idx);
+
+      if (!user.tfa_enabled)
+        throw new UnauthorizedException('TFA is not enabled');
+
+      const isTokenValid = await this.authService.validateTFAToken(
+        user.tfa_secret,
+        token,
+      );
+
+      if (isTokenValid) {
+        return { message: 'TFA is successfully enabled' };
+      } else throw new UnauthorizedException('Invalid TFA token');
+    } catch (error) {
+      throw error;
+    }
   }
 }
