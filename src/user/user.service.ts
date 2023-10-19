@@ -9,7 +9,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { User, UserStatus } from './user.entity';
+import { TFASecret, User, UserStatus } from './user.entity';
 
 @Injectable()
 export class UserService {
@@ -77,6 +77,14 @@ export class UserService {
     await this.userRepository.remove(user);
   }
 
+  async findIdx(idx: number): Promise<User> {
+    const user = await this.userRepository.findOneBy({ idx });
+
+    if (!user) throw new NotFoundException(`User with idx ${idx} not found`);
+
+    return user;
+  }
+
   async findId(id: string): Promise<User> {
     const user = await this.userRepository.findOneBy({ id });
 
@@ -118,12 +126,17 @@ export class UserService {
     return user;
   }
 
-  async updateMfa(idx: number, mfa_enabled: boolean): Promise<User> {
+  async updateTFA(
+    idx: number,
+    tfa_enabled: boolean,
+    tfa_secret: TFASecret,
+  ): Promise<User> {
     const user = await this.userRepository.findOne({ where: { idx } });
     if (!user) throw new NotFoundException(`User with idx ${idx} not found`);
 
     try {
-      user.mfa_enabled = mfa_enabled;
+      user.tfa_enabled = tfa_enabled;
+      user.tfa_secret = tfa_secret;
 
       return await this.userRepository.save(user);
     } catch (error) {

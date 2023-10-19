@@ -1,5 +1,16 @@
 import { HttpService } from '@nestjs/axios';
-import { Controller, Get, Query, Redirect, Res, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Redirect,
+  Res,
+  Req,
+  Body,
+  Post,
+  UnauthorizedException,
+  Param,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { UserService } from 'src/user/user.service';
@@ -12,6 +23,7 @@ export class AuthController {
     private userService: UserService,
   ) {}
 
+  //42Oauth
   @Get('authorize')
   @Redirect()
   async loginWith42() {
@@ -51,6 +63,52 @@ export class AuthController {
       const user = await this.userService.findOrCreateUser(userData);
 
       return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  //Google authentication
+  @Post('tfa/switch')
+  async switchTFA(@Param('idx') idx: number): Promise<any> {
+    try {
+      const user = await this.userService.findIdx(idx);
+
+      if (user.tfa_enabled) await this.userService.updateTFA(idx, false, null);
+      else {
+        const tfa_secret = await this.authService.generateTFASecret();
+        const qrCode = await this.authService.generateQRCode(
+          tfa_secret.otpauthUrl,
+        );
+
+        await this.userService.updateTFA(idx, true, tfa_secret);
+
+        return {
+          qrCode,
+          secret: tfa_secret.base32,
+        };
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Post('tfa/verify')
+  async verifyTFACode(@Param('idx') idx: number, @Body('token') token) {
+    try {
+      const user = await this.userService.findIdx(idx);
+
+      if (!user.tfa_enabled)
+        throw new UnauthorizedException('TFA is not enabled');
+
+      const isTokenValid = await this.authService.validateTFAToken(
+        user.tfa_secret,
+        token,
+      );
+
+      if (isTokenValid) {
+        return { message: 'TFA is successfully enabled' };
+      } else throw new UnauthorizedException('Invalid TFA token');
     } catch (error) {
       throw error;
     }

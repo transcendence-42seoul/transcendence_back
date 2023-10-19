@@ -11,7 +11,7 @@ import {
 import { UserService } from './user.service';
 import { UserDto } from './dto/user.dto';
 import { UserStatusValidationPipe } from './pipes/user-status.validation.pipe';
-import { User, UserStatus } from './user.entity';
+import { TFASecret, User, UserStatus } from './user.entity';
 
 @Controller('user')
 export class UserController {
@@ -58,10 +58,11 @@ export class UserController {
   }
 
   @Patch('/update/:idx/mfa')
-  async updateMfa(
+  async updateTFA(
     @Param('idx', ParseIntPipe) idx: number,
-    @Body('mfa_enabled') mfa_enabled: boolean,
+    @Body('tfa_enabled') tfa_enabled: boolean,
+    @Body('tfa_secret') tfa_secret: TFASecret,
   ): Promise<User> {
-    return this.userService.updateMfa(idx, mfa_enabled);
+    return this.userService.updateTFA(idx, tfa_enabled, tfa_secret);
   }
 }
