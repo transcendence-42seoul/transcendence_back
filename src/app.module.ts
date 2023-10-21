@@ -9,6 +9,8 @@ import { RankingModule } from './ranking/ranking.module';
 import { AlarmModule } from './alarm/alarm.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeORMConfig } from './configs/typeorm.config';
+import { GameModule } from './game/game.module';
+import { MiniChatModule } from './mini-chat/miniChat.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { typeORMConfig } from './configs/typeorm.config';
     RankingModule,
     AlarmModule,
     TypeOrmModule.forRoot(typeORMConfig),
+    GameModule,
+    MiniChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
