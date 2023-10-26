@@ -40,7 +40,7 @@ export class UserController {
 
   @Get('/:id')
   async findById(@Param('id') id: string) {
-    return await this.userService.findId(id);
+    return await this.userService.findById(id);
   }
 
   @Patch('/:idx/profile')

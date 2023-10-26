@@ -1,14 +1,8 @@
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
 import { User } from '../user/user.entity';
-import {
-  BaseEntity,
-  Column,
-  Entity,
-  OneToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
 
 @Entity()
-export class Ranking extends BaseEntity {
+export class Ranking {
   @PrimaryGeneratedColumn()
   idx: number;
 
@@ -17,9 +11,9 @@ export class Ranking extends BaseEntity {
   })
   user: User;
 
-  @Column({ nullable: true })
+  @Column({ type: 'integer', nullable: true })
   rank: number;
 
-  @Column({ nullable: false })
+  @Column({ type: 'integer' })
   score: number;
 }

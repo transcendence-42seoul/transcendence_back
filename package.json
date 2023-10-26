@@ -29,6 +29,7 @@
     "class-validator": "^0.14.0",
     "g": "^2.0.1",
     "i": "^0.3.7",
+    "node-fetch": "^3.3.2",
     "pg": "^8.11.3",
     "qrcode": "^1.5.3",
     "reflect-metadata": "^0.1.13",

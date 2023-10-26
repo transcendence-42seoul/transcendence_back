@@ -17,9 +17,6 @@ export class Avatar extends BaseEntity {
   })
   user: User;
 
-  @Column({ nullable: true })
-  name: string;
-
   @Column({ type: 'bytea', nullable: true })
   image_data: Buffer;
 }
