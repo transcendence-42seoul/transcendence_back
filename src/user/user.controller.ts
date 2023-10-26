@@ -13,11 +13,18 @@ import { UserDto } from './dto/user.dto';
 import { UserStatusValidationPipe } from './pipes/user-status.validation.pipe';
 import { TFASecret, User, UserStatus } from './user.entity';
 
-@Controller('user')
+@Controller('users')
 export class UserController {
   constructor(private userService: UserService) {}
 
-  @Post('/createTest')
+  /**
+   * createTest, deleteAll
+   * 테스트를 위한 메소드
+   * 나중에 지울 것
+   *
+   * @auther : soopark
+   */
+  @Post('/createTest') //zx/vz
   async createTest() {
     await this.userService.signup({
       id: 'test',
@@ -31,17 +38,12 @@ export class UserController {
     await this.userService.deleteAll();
   }
 
-  @Delete('/delete/:idx')
-  async deleteByIdx(@Param('idx', ParseIntPipe) idx: number) {
-    await this.userService.deleteByIdx(idx);
-  }
-
-  @Get('/find/:id')
-  async findId(@Param('id') id: string) {
+  @Get('/:id')
+  async findById(@Param('id') id: string) {
     return await this.userService.findId(id);
   }
 
-  @Patch('/update/:idx/profile')
+  @Patch('/:idx/profile')
   async updateProfile(
     @Param('idx', ParseIntPipe) idx: number,
     @Body() userDto: UserDto,
@@ -49,7 +51,7 @@ export class UserController {
     return this.userService.updateProfile(idx, userDto);
   }
 
-  @Patch('/update/:idx/status')
+  @Patch('/:idx/status')
   async updateStatus(
     @Param('idx', ParseIntPipe) idx: number,
     @Body('status', UserStatusValidationPipe) status: UserStatus,
@@ -57,12 +59,17 @@ export class UserController {
     return this.userService.updateStatus(idx, status);
   }
 
-  @Patch('/update/:idx/tfa')
+  @Patch('/:idx/tfa')
   async updateTFA(
     @Param('idx', ParseIntPipe) idx: number,
     @Body('tfa_enabled') tfa_enabled: boolean,
     @Body('tfa_secret') tfa_secret: TFASecret,
   ): Promise<User> {
     return this.userService.updateTFA(idx, tfa_enabled, tfa_secret);
+  }
+
+  @Delete('/:idx')
+  async deleteByIdx(@Param('idx', ParseIntPipe) idx: number) {
+    await this.userService.deleteByIdx(idx);
   }
 }

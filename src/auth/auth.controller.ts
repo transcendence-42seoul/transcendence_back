@@ -10,6 +10,7 @@ import {
   Post,
   UnauthorizedException,
   Param,
+  Patch,
   ParseIntPipe,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -25,16 +26,16 @@ export class AuthController {
   ) {}
 
   //42Oauth
-  @Get('authorize')
+  @Get('oauth/42/authorize')
   @Redirect()
   async loginWith42() {
     const clientId = `u-s4t2ud-decaba972e71347060f602c587ad21a8158074daa139ecd5dad4dc9faec4f603`;
-    const redirectUrl = 'http://localhost:3000/auth/callback';
+    const redirectUrl = `http://localhost:3000/auth/oauth/42/callback`;
     const url = `https://api.intra.42.fr/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUrl}&response_type=code`;
     return { url };
   }
 
-  @Get('callback')
+  @Get('oauth/42/callback')
   async loginWith42Callback(@Query('code') code: string, @Res() res: Response) {
     try {
       const token = await this.authService.getTokenFrom42(code);
@@ -69,8 +70,7 @@ export class AuthController {
     }
   }
 
-  //Google authentication
-  @Post('tfa/switch/:idx')
+  @Patch('tfa/:idx/switch')
   async switchTFA(@Param('idx', ParseIntPipe) idx: number): Promise<any> {
     try {
       const user = await this.userService.findIdx(idx);
@@ -96,7 +96,7 @@ export class AuthController {
     }
   }
 
-  @Post('tfa/verify/:idx')
+  @Post('tfa/:idx/verify')
   async verifyTFACode(
     @Param('idx', ParseIntPipe) idx: number,
     @Body('token') token,
