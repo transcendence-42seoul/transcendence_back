@@ -14,7 +14,7 @@ export class AuthService {
   async getTokenFrom42(code: string): Promise<any> {
     const clientId = `u-s4t2ud-decaba972e71347060f602c587ad21a8158074daa139ecd5dad4dc9faec4f603`;
     const clientSecret = `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`;
-    const redirectUrl = `http://localhost:3000/auth/callback`;
+    const redirectUrl = `http://localhost:3000/auth/oauth/42/callback`;
 
     const tokenUrl = `https://api.intra.42.fr/oauth/token`;
 
