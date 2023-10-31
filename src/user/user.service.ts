@@ -77,7 +77,13 @@ export class UserService {
     await this.userRepository.remove(user);
   }
 
-  async findIdx(idx: number): Promise<User> {
+  async findAllUsers(): Promise<User[]> {
+    return this.userRepository.find({
+      relations: ['avatar', 'record', 'ranking'],
+    });
+  }
+
+  async findByIdx(idx: number): Promise<User> {
     const user = await this.userRepository.findOneBy({ idx });
 
     if (!user) throw new NotFoundException(`User with idx ${idx} not found`);
@@ -85,7 +91,7 @@ export class UserService {
     return user;
   }
 
-  async findId(id: string): Promise<User> {
+  async findById(id: string): Promise<User> {
     const user = await this.userRepository.findOneBy({ id });
 
     if (!user) throw new NotFoundException(`User with id ${id} not found`);
