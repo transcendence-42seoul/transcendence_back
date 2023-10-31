@@ -43,7 +43,7 @@ export class RecordService {
         !recordDto.general_game ||
         !recordDto.general_win
       ) {
-        throw new BadRequestException('Invalid ladderGeneralDto provided');
+        throw new BadRequestException('Invalid recordDto provided');
       }
 
       if (recordDto.total_game !== undefined)
@@ -127,17 +127,5 @@ export class RecordService {
     } catch (error) {
       throw error;
     }
-  }
-
-  async deleteByIdx(idx: number): Promise<Record> {
-    const user = await this.userRepository.findOne({ where: { idx } });
-    if (!user) throw new NotFoundException(`Can't find user with idx ${idx}`);
-    const record = user.record;
-    if (!record) throw new NotFoundException(`Can't find User ${idx}'s record`);
-
-    await this.recordRepository.remove(record);
-
-    const newRecord = this.recordRepository.createRecord();
-    return this.updateRecord(idx, RecordDto.convertDto(newRecord));
   }
 }

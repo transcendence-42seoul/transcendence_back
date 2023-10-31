@@ -24,6 +24,7 @@ export class AvatarService {
   }
 
   async updateAvatar(idx: number, file: any): Promise<Avatar> {
+    if (!file) throw new NotFoundException(`Can't find file`);
     const user = await this.userRepository.findOne({ where: { idx } });
     if (!user) throw new NotFoundException(`Can't find user with idx ${idx}`);
     const avatar = user.avatar;
@@ -48,9 +49,8 @@ export class AvatarService {
     const avatar = user.avatar;
     if (!avatar) throw new NotFoundException(`Can't find User ${idx}'s avatar`);
 
-    await this.avatarRepository.remove(avatar);
+    const newAvatar = await this.avatarRepository.standardAvatar();
 
-    const newAvatar = this.avatarRepository.createAvatar();
     return this.updateAvatar(idx, AvatarDto.convertDto(newAvatar));
   }
 }

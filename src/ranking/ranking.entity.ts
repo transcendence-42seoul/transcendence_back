@@ -11,9 +11,6 @@ export class Ranking {
   })
   user: User;
 
-  @Column({ type: 'integer', nullable: true })
-  rank: number;
-
   @Column({ type: 'integer' })
   score: number;
 }

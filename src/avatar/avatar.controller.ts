@@ -17,7 +17,7 @@ export class AvatarController {
 
   @Patch('/:idx')
   @UseInterceptors(FileInterceptor('image'))
-  async updateAvatar(
+  async updateByIdx(
     @Param('idx', ParseIntPipe) idx: number,
     @UploadedFile() file,
   ): Promise<Avatar> {

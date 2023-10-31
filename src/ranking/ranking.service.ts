@@ -1,13 +1,9 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RankingRepository } from './ranking.repository';
-import { RankingDto } from './dto/ranking.dto';
 import { UserRepository } from '../user/user.repository';
 import { Ranking } from './ranking.entity';
+import { MoreThanOrEqual } from 'typeorm';
 
 @Injectable()
 export class RankingService {
@@ -22,7 +18,7 @@ export class RankingService {
     return this.rankingRepository.createRanking();
   }
 
-  async getRankingByUserId(idx: number): Promise<Ranking> {
+  async getRanking(idx: number): Promise<Ranking> {
     const user = await this.userRepository.findOne({ where: { idx } });
     if (!user) throw new NotFoundException(`User with idx "${idx}" not found`);
 
@@ -33,45 +29,28 @@ export class RankingService {
     return ranking;
   }
 
-  async updateRankingByUserId(
-    idx: number,
-    updateRankingDto: RankingDto,
-  ): Promise<Ranking> {
+  async getRankByIdx(idx: number): Promise<number> {
     const user = await this.userRepository.findOne({ where: { idx } });
     if (!user) throw new NotFoundException(`User with idx "${idx}" not found`);
-
     const ranking = user.ranking;
     if (!ranking)
-      throw new NotFoundException(`Ranking with idx "${idx}" not found`);
+      throw new NotFoundException(`User ${idx}'s ranking not found`);
 
-    try {
-      if (
-        !updateRankingDto ||
-        !updateRankingDto.rank ||
-        !updateRankingDto.score
-      )
-        throw new BadRequestException('Invalid updateRankingDto provided');
-      ranking.rank = updateRankingDto.rank;
-      ranking.score = updateRankingDto.score;
-
-      return this.rankingRepository.save(ranking);
-    } catch (error) {
-      return error;
-    }
+    const userScore = ranking.score;
+    const higherScoreCount = await this.rankingRepository.count({
+      where: {
+        score: MoreThanOrEqual(userScore),
+      },
+    });
+    return higherScoreCount;
   }
 
-  async deleteRankingByUserId(idx: number): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { idx } });
-    if (!user) throw new NotFoundException(`User with idx "${idx}" not found`);
-
-    const ranking = user.ranking;
-    if (!ranking)
-      throw new NotFoundException(`Ranking with idx "${idx}" not found`);
-
-    const result = await this.rankingRepository.delete({ idx });
-
-    if (result.affected === 0) {
-      throw new NotFoundException(`Ranking with idx "${idx}" not found`);
-    }
+  async getAllRank(): Promise<Ranking[]> {
+    return await this.rankingRepository
+      .createQueryBuilder('ranking')
+      .innerJoin('ranking.user', 'user')
+      .select(['user.idx', 'ranking.score'])
+      .select('RANK() OVER (ORDER BY ranking.score DESC)', 'rank')
+      .getRawMany();
   }
 }

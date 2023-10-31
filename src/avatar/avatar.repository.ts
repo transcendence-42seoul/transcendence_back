@@ -11,8 +11,15 @@ export class AvatarRepository extends Repository<Avatar> {
   }
 
   async createAvatar(): Promise<Avatar> {
+    const avatar = await this.standardAvatar();
+    await this.save(avatar);
+    return avatar;
+  }
+
+  async standardAvatar(): Promise<Avatar> {
     const imagePath = path.resolve(
       __dirname,
+      '..',
       '..',
       'src',
       'img',
@@ -23,7 +30,6 @@ export class AvatarRepository extends Repository<Avatar> {
     const avatar = this.create({
       image_data: imgBuffer,
     });
-    await this.save(avatar);
     return avatar;
   }
 }

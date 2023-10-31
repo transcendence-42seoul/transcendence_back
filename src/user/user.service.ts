@@ -77,6 +77,12 @@ export class UserService {
     await this.userRepository.remove(user);
   }
 
+  async findAllUsers(): Promise<User[]> {
+    return this.userRepository.find({
+      relations: ['avatar', 'record', 'ranking'],
+    });
+  }
+
   async findByIdx(idx: number): Promise<User> {
     const user = await this.userRepository.findOneBy({ idx });
 

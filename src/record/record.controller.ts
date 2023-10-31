@@ -4,7 +4,6 @@ import {
   Param,
   Get,
   Patch,
-  Delete,
   ParseIntPipe,
 } from '@nestjs/common';
 import { RecordService } from './record.service';
@@ -25,7 +24,7 @@ export class RecordController {
     @Param('idx', ParseIntPipe) idx: number,
     @Body() recordDto: RecordDto,
   ): Promise<Record> {
-    return this.recordService.updateLadderRecord(idx, recordDto);
+    return this.recordService.updateRecord(idx, recordDto);
   }
 
   @Patch('/:idx/ladder')
@@ -42,10 +41,5 @@ export class RecordController {
     @Body() generalRecordDto: GeneralRecordDto,
   ): Promise<Record> {
     return this.recordService.updateGeneralRecord(idx, generalRecordDto);
-  }
-
-  @Delete('/:idx')
-  async deleteByIdx(@Param('idx', ParseIntPipe) idx: number) {
-    await this.recordService.deleteByIdx(idx);
   }
 }
