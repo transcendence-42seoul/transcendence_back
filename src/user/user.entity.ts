@@ -1,4 +1,5 @@
 import { Avatar } from 'src/avatar/avatar.entity';
+import { FriendRequest } from 'src/friend/friend.request.entity';
 import { Ranking } from 'src/ranking/ranking.entity';
 import { Record } from 'src/record/record.entity';
 import {
@@ -6,6 +7,7 @@ import {
   Column,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -67,4 +69,20 @@ export class User extends BaseEntity {
   })
   @JoinColumn({ name: 'ranking' })
   ranking: Ranking;
+
+  @OneToMany(() => FriendRequest, (friendRequest) => friendRequest.requester, {
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'requester' })
+  requester: FriendRequest[];
+
+  @OneToMany(() => FriendRequest, (friendRequest) => friendRequest.requested, {
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'requested' })
+  requested: FriendRequest[];
 }
