@@ -7,6 +7,7 @@ import { FriendRequest } from './friend.request.entity';
 import { FriendRequestPair } from './friend.request.pair.entity';
 import { UserRepository } from 'src/user/user.repository';
 import { FriendRequestPairRepository } from './friend.request.pair.repository';
+import { BanRepository } from 'src/ban/ban.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([FriendRequest, FriendRequestPair])],
@@ -16,6 +17,7 @@ import { FriendRequestPairRepository } from './friend.request.pair.repository';
     FriendRequestRepository,
     FriendRequestPairRepository,
     UserRepository,
+    BanRepository,
   ],
 })
 export class FriendModule {}

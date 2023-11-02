@@ -8,6 +8,7 @@ import { FriendRequestRepository } from './friend.request.repository';
 import { UserRepository } from 'src/user/user.repository';
 import { User } from 'src/user/user.entity';
 import { FriendRequestPairRepository } from './friend.request.pair.repository';
+import { BanRepository } from 'src/ban/ban.repository';
 
 @Injectable()
 export class FriendService {
@@ -18,6 +19,8 @@ export class FriendService {
     private friendRequestRepository: FriendRequestRepository,
     @InjectRepository(FriendRequestPairRepository)
     private friendRequestPairRepository: FriendRequestPairRepository,
+    @InjectRepository(BanRepository)
+    private banRepository: BanRepository,
   ) {}
 
   async allowFriend(idx1: number, idx2: number): Promise<void> {
@@ -42,42 +45,48 @@ export class FriendService {
   }
 
   async requestFriend(requesterIdx: number, requestedIdx: number) {
-    const user1 = await this.userRepository.findOne({
+    const requesterUser = await this.userRepository.findOne({
       where: { idx: requesterIdx },
     });
-    if (!user1)
-      throw new NotFoundException(`User with idx "${user1}" not found`);
-    const user2 = await this.userRepository.findOne({
+    if (!requesterUser)
+      throw new NotFoundException(`User with idx ${requesterIdx} not found`);
+    const requestedUser = await this.userRepository.findOne({
       where: { idx: requestedIdx },
     });
-    if (!user2)
-      throw new NotFoundException(`User with idx "${user2}" not found`);
+    if (!requestedUser)
+      throw new NotFoundException(`User with idx ${requestedIdx} not found`);
+
+    if (requesterUser.idx === requestedUser.idx)
+      throw new BadRequestException('You cannot send friend request to you');
+
+    const bannedUsers = await this.banRepository.find({
+      where: [
+        { banner: { idx: requestedIdx }, banned: requesterIdx },
+        { banner: { idx: requesterIdx }, banned: requestedIdx },
+      ],
+    });
+    if (bannedUsers.length === 1) throw new BadRequestException('Banned user');
 
     const friendRequest = await this.friendRequestRepository.findOne({
-      where: {
-        requester: { idx: requesterIdx },
-        requested: { idx: requestedIdx },
-      },
+      where: [
+        {
+          requester: { idx: requesterIdx },
+          requested: { idx: requestedIdx },
+        },
+        {
+          requester: { idx: requestedIdx },
+          requested: { idx: requesterIdx },
+        },
+      ],
       relations: ['requester', 'requested'],
     });
     if (friendRequest) {
       return { message: 'Friend request already sent' };
     }
 
-    const requesterUser = await this.userRepository.findOne({
-      where: { idx: requesterIdx },
-    });
-    const requestedUser = await this.userRepository.findOne({
-      where: { idx: requestedIdx },
-    });
-    if (!requesterUser)
-      throw new NotFoundException(`User with idx ${requesterIdx} not found`);
-    if (!requestedUser)
-      throw new NotFoundException(`User with idx ${requestedIdx} not found`);
-
     let idx1 = requesterIdx;
     let idx2 = requestedIdx;
-    if (idx1 < idx2) {
+    if (idx1 > idx2) {
       [idx2, idx1] = [idx1, idx2];
     }
 

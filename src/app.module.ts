@@ -10,6 +10,7 @@ import { AlarmModule } from './alarm/alarm.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeORMConfig } from './configs/typeorm.config';
 import { FriendModule } from './friend/friend.module';
+import { BanModule } from './ban/ban.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { FriendModule } from './friend/friend.module';
     AlarmModule,
     TypeOrmModule.forRoot(typeORMConfig),
     FriendModule,
+    BanModule,
   ],
   controllers: [AppController],
   providers: [AppService],
