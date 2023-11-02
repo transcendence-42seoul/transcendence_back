@@ -9,6 +9,7 @@ import { RankingModule } from './ranking/ranking.module';
 import { AlarmModule } from './alarm/alarm.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeORMConfig } from './configs/typeorm.config';
+import { FriendModule } from './friend/friend.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { typeORMConfig } from './configs/typeorm.config';
     RankingModule,
     AlarmModule,
     TypeOrmModule.forRoot(typeORMConfig),
+    FriendModule,
   ],
   controllers: [AppController],
   providers: [AppService],
