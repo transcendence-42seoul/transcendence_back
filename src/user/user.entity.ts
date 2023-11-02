@@ -1,4 +1,5 @@
 import { Avatar } from 'src/avatar/avatar.entity';
+import { Ban } from 'src/ban/ban.entity';
 import { FriendRequest } from 'src/friend/friend.request.entity';
 import { Ranking } from 'src/ranking/ranking.entity';
 import { Record } from 'src/record/record.entity';
@@ -85,4 +86,12 @@ export class User extends BaseEntity {
   })
   @JoinColumn({ name: 'requested' })
   requested: FriendRequest[];
+
+  @OneToMany(() => Ban, (ban) => ban.banner, {
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'banner' })
+  banner: Ban[];
 }

@@ -9,6 +9,9 @@ import { UserRepository } from 'src/user/user.repository';
 import { RankingRepository } from 'src/ranking/ranking.repository';
 import { RecordRepository } from 'src/record/record.repository';
 import { AvatarRepository } from 'src/avatar/avatar.repository';
+import { FriendRequestRepository } from 'src/friend/friend.request.repository';
+import { FriendRequestPairRepository } from 'src/friend/friend.request.pair.repository';
+import { BanRepository } from 'src/ban/ban.repository';
 
 @Module({
   imports: [HttpModule, TypeOrmModule.forFeature([User])],
@@ -20,6 +23,9 @@ import { AvatarRepository } from 'src/avatar/avatar.repository';
     RankingRepository,
     RecordRepository,
     AvatarRepository,
+    FriendRequestRepository,
+    FriendRequestPairRepository,
+    BanRepository,
   ],
 })
 export class AuthModule {}

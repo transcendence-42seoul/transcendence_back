@@ -10,6 +10,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { TFASecret, User, UserStatus } from './user.entity';
+import { FriendRequestPairRepository } from 'src/friend/friend.request.pair.repository';
+import { FriendRequestRepository } from 'src/friend/friend.request.repository';
+import { BanRepository } from 'src/ban/ban.repository';
 
 @Injectable()
 export class UserService {
@@ -22,6 +25,12 @@ export class UserService {
     private recordRepository: RecordRepository,
     @InjectRepository(AvatarRepository)
     private avatarRepository: AvatarRepository,
+    @InjectRepository(FriendRequestRepository)
+    private friendRequestRepository: FriendRequestRepository,
+    @InjectRepository(FriendRequestPairRepository)
+    private friendRequestPairRepository: FriendRequestPairRepository,
+    @InjectRepository(BanRepository)
+    private banRepository: BanRepository,
   ) {}
 
   async findOrCreateUser(userData: any): Promise<User> {
@@ -57,24 +66,49 @@ export class UserService {
     }
   }
 
-  async deleteAll(): Promise<void> {
-    const user = await this.userRepository.find({});
-    for (let i = 0; i < user.length; i++) {
-      await this.avatarRepository.remove(user[i].avatar);
-      await this.rankingRepository.remove(user[i].ranking);
-      await this.recordRepository.remove(user[i].record);
-      await this.userRepository.remove(user[i]);
-    }
-  }
-
   async deleteByIdx(idx: number): Promise<void> {
     const user = await this.userRepository.findOne({ where: { idx } });
     if (!user) throw new NotFoundException(`User with idx ${idx} not found`);
 
+    const requester = user.requester;
+    for (let j = 0; j < requester.length; j++) {
+      if (requester[j]) {
+        const pair = requester[j].friendRequestPair;
+        if (pair) await this.friendRequestPairRepository.remove(pair);
+        await this.friendRequestRepository.remove(requester[j]);
+      }
+    }
+
+    const requested = user.requested;
+    for (let j = 0; j < requested.length; j++) {
+      if (requested[j]) {
+        const pair = requested[j].friendRequestPair;
+        if (pair) await this.friendRequestPairRepository.remove(pair);
+        await this.friendRequestRepository.remove(requested[j]);
+      }
+    }
+
+    const banner = user.banner;
+    for (let j = 0; j < banner.length; j++) {
+      if (banner[j]) {
+        await this.banRepository.remove(banner[j]);
+      }
+    }
+
     await this.avatarRepository.remove(user.avatar);
     await this.rankingRepository.remove(user.ranking);
     await this.recordRepository.remove(user.record);
-    await this.userRepository.remove(user);
+
+    if (user) {
+      await this.userRepository.remove(user);
+    }
+  }
+
+  async deleteAll(): Promise<void> {
+    const user = await this.userRepository.find({});
+    for (let i = 0; i < user.length; i++) {
+      this.deleteByIdx(user[i].idx);
+    }
   }
 
   async findAllUsers(): Promise<User[]> {
