@@ -12,6 +12,7 @@ export class FriendRequestPairRepository extends Repository<FriendRequestPair> {
     const friendRequestPair = this.create({
       user1: idx1,
       user2: idx2,
+      isAccepted: false,
     });
     await this.save(friendRequestPair);
     return friendRequestPair;

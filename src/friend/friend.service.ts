@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FriendRequestRepository } from './friend.request.repository';
 import { UserRepository } from 'src/user/user.repository';
@@ -71,20 +75,22 @@ export class FriendService {
     if (!requestedUser)
       throw new NotFoundException(`User with idx ${requestedIdx} not found`);
 
-    await this.friendRequestRepository.createFriendRequest(
-      requesterUser,
-      requestedUser,
-    );
-
-    // pair logic
-
     let idx1 = requesterIdx;
     let idx2 = requestedIdx;
     if (idx1 < idx2) {
       [idx2, idx1] = [idx1, idx2];
     }
 
-    this.friendRequestPairRepository.createFriendRequestPair(idx1, idx2);
+    const pair = await this.friendRequestPairRepository.createFriendRequestPair(
+      idx1,
+      idx2,
+    );
+
+    await this.friendRequestRepository.createFriendRequest(
+      requesterUser,
+      requestedUser,
+      pair,
+    );
 
     return { message: 'Friend request sent' };
   }
@@ -94,7 +100,10 @@ export class FriendService {
     if (!user) throw new NotFoundException(`Can't find user with idx ${idx}`);
 
     const pairList = await this.friendRequestPairRepository.find({
-      where: [{ user1: idx }, { user2: idx }, { isAccepted: true }],
+      where: [
+        { user1: idx, isAccepted: true },
+        { user2: idx, isAccepted: true },
+      ],
     });
 
     const friendList: User[] = [];
@@ -109,7 +118,54 @@ export class FriendService {
         );
       }
     }
-
     return friendList;
+  }
+
+  async allowFriendRequest(
+    requester: number,
+    requested: number,
+  ): Promise<void> {
+    const user1 = await this.userRepository.findOne({
+      where: { idx: requester },
+    });
+    if (!user1)
+      throw new NotFoundException(`User with idx "${user1}" not found`);
+    const user2 = await this.userRepository.findOne({
+      where: { idx: requested },
+    });
+    if (!user2)
+      throw new NotFoundException(`User with idx "${user2}" not found`);
+
+    const request = await this.friendRequestRepository.findOne({
+      where: [{ requester: { idx: requester }, requested: { idx: requested } }],
+    });
+    const pair = request.friendRequestPair;
+
+    if (pair.isAccepted) throw new BadRequestException('Already accepted');
+    pair.isAccepted = true;
+    this.friendRequestPairRepository.save(pair);
+  }
+
+  async deleteFriend(idx1: number, idx2: number): Promise<void> {
+    const user1 = await this.userRepository.findOne({ where: { idx: idx1 } });
+    if (!user1)
+      throw new NotFoundException(`User with idx "${user1}" not found`);
+    const user2 = await this.userRepository.findOne({ where: { idx: idx2 } });
+    if (!user2)
+      throw new NotFoundException(`User with idx "${user2}" not found`);
+
+    const request = await this.friendRequestRepository.findOne({
+      where: [
+        { requester: { idx: idx1 }, requested: { idx: idx2 } },
+        { requester: { idx: idx2 }, requested: { idx: idx1 } },
+      ],
+    });
+    if (!request) throw new NotFoundException('Friend request not found');
+
+    const pair = request.friendRequestPair;
+    if (!pair) throw new NotFoundException('Friend pair not found');
+
+    this.friendRequestPairRepository.remove(pair);
+    this.friendRequestRepository.remove(request);
   }
 }
