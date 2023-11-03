@@ -50,7 +50,7 @@ export class RankingService {
       .createQueryBuilder('ranking')
       .innerJoin('ranking.user', 'user')
       .select(['user.idx', 'ranking.score'])
-      .select('RANK() OVER (ORDER BY ranking.score DESC)', 'rank')
+      .addSelect('RANK() OVER (ORDER BY ranking.score DESC)', 'rank')
       .getRawMany();
   }
 }

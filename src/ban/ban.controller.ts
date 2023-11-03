@@ -26,7 +26,7 @@ export class BanController {
     @Param('bannerIdx', ParseIntPipe) bannerIdx: number,
     @Param('bannedIdx', ParseIntPipe) bannedIdx: number,
   ): Promise<void> {
-    return await this.banService.unBanUser(bannerIdx, bannedIdx);
+    await this.banService.unBanUser(bannerIdx, bannedIdx);
   }
 
   @Get('/:idx')

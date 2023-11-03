@@ -3,6 +3,8 @@ import { Ban } from 'src/ban/ban.entity';
 import { FriendRequest } from 'src/friend/friend.request.entity';
 import { Ranking } from 'src/ranking/ranking.entity';
 import { Record } from 'src/record/record.entity';
+import { ChatMessage } from 'src/chat/chat.message.entity';
+import { ChatParticipant } from 'src/chat/chat.participant.entity';
 import {
   BaseEntity,
   Column,
@@ -94,4 +96,20 @@ export class User extends BaseEntity {
   })
   @JoinColumn({ name: 'banner' })
   banner: Ban[];
+
+  @OneToMany(() => ChatParticipant, (chatParticipant) => chatParticipant.user, {
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'participants' })
+  participants: ChatParticipant[];
+
+  @OneToMany(() => ChatMessage, (chatMessage) => chatMessage.user, {
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'messages' })
+  messages: ChatMessage[];
 }
