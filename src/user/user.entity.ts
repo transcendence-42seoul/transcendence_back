@@ -1,4 +1,6 @@
 import { Avatar } from 'src/avatar/avatar.entity';
+import { Ban } from 'src/ban/ban.entity';
+import { FriendRequest } from 'src/friend/friend.request.entity';
 import { Ranking } from 'src/ranking/ranking.entity';
 import { Record } from 'src/record/record.entity';
 import {
@@ -6,14 +8,20 @@ import {
   Column,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 export enum UserStatus {
-  ONLINE = 'online',
-  OFFLINE = 'offline',
-  PLAYING = 'playing',
+  ONLINE = 'ONLINE',
+  OFFLINE = 'OFFLINE',
+  PLAYING = 'PLAYING',
+}
+
+export interface TFASecret {
+  otpauthUrl: string;
+  base32: string;
 }
 
 @Entity()
@@ -34,7 +42,10 @@ export class User extends BaseEntity {
   status: UserStatus;
 
   @Column({ nullable: false })
-  mfa_enabled: boolean;
+  tfa_enabled: boolean;
+
+  @Column({ type: 'jsonb', nullable: true })
+  tfa_secret: TFASecret;
 
   @OneToOne(() => Avatar, (avatar) => avatar.user, {
     cascade: true,
@@ -59,4 +70,28 @@ export class User extends BaseEntity {
   })
   @JoinColumn({ name: 'ranking' })
   ranking: Ranking;
+
+  @OneToMany(() => FriendRequest, (friendRequest) => friendRequest.requester, {
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'requester' })
+  requester: FriendRequest[];
+
+  @OneToMany(() => FriendRequest, (friendRequest) => friendRequest.requested, {
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'requested' })
+  requested: FriendRequest[];
+
+  @OneToMany(() => Ban, (ban) => ban.banner, {
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'banner' })
+  banner: Ban[];
 }
