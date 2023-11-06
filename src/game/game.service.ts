@@ -1,26 +1,40 @@
 import { Injectable } from '@nestjs/common';
 import { CreateGameDto } from './dto/create-game.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
+import { v4 as uuidv4 } from 'uuid';
+import { Socket } from 'socket.io';
 
 @Injectable()
 export class GameService {
-  create(createGameDto: CreateGameDto) {
+  createGame(createGameDto: CreateGameDto) {
     return 'This action adds a new game';
   }
 
-  findAll() {
-    return `This action returns all game`;
+  findGameRoomIdOfUser(userId: string) {
+    return 'This action returns game room id of user';
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} game`;
+  joinGame(socket: Socket, roomId: string) {
+    socket.join(roomId);
   }
 
-  update(id: number, updateGameDto: UpdateGameDto) {
-    return `This action updates a #${id} game`;
+  leaveGame(socket: Socket, roomId: string) {
+    socket.leave(roomId);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} game`;
-  }
+  // findAll() {
+  //   return `This action returns all game`;
+  // }
+
+  // findOne(id: number) {
+  //   return `This action returns a #${id} game`;
+  // }
+
+  // update(id: number, updateGameDto: UpdateGameDto) {
+  //   return `This action updates a #${id} game`;
+  // }
+
+  // remove(id: number) {
+  //   return `This action removes a #${id} game`;
+  // }
 }
