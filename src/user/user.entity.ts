@@ -97,7 +97,7 @@ export class User extends BaseEntity {
   @JoinColumn({ name: 'banner' })
   banner: Ban[];
 
-  @OneToOne(() => Game, (game) => game, {
+  @OneToMany(() => Game, (game) => game.idx, {
     cascade: true,
     eager: true,
     onDelete: 'CASCADE',
