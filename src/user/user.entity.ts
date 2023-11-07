@@ -3,11 +3,13 @@ import { Ban } from 'src/ban/ban.entity';
 import { FriendRequest } from 'src/friend/friend.request.entity';
 import { Ranking } from 'src/ranking/ranking.entity';
 import { Record } from 'src/record/record.entity';
+import { Game } from 'src/game/entities/game.entity';
 import {
   BaseEntity,
   Column,
   Entity,
   JoinColumn,
+  // ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -94,4 +96,12 @@ export class User extends BaseEntity {
   })
   @JoinColumn({ name: 'banner' })
   banner: Ban[];
+
+  @OneToOne(() => Game, (game) => game, {
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'game' })
+  game: Game;
 }

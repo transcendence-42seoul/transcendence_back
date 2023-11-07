@@ -3,22 +3,36 @@ import { CreateGameDto } from './dto/create-game.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { Socket } from 'socket.io';
+import { GameRepository } from './game.repository';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class GameService {
-  createGame(createGameDto: CreateGameDto) {
+  constructor(
+    @InjectRepository(GameRepository)
+    private gameRepository: GameRepository,
+  ) {}
+
+  async createGame(createGameDto: CreateGameDto) {
+    await this.gameRepository.createGame(createGameDto);
     return 'This action adds a new game';
   }
+
+  // removeGame(gameTableIndex: number): Promise<void> {
+  //   const game = this.gameTables[gameTableIndex];
+  //   if (!game)
+  //     throw new Error(`Game with index ${gameTableIndex} does not exist`);
+  // }
 
   findGameRoomIdOfUser(userId: string) {
     return 'This action returns game room id of user';
   }
 
-  joinGame(socket: Socket, roomId: string) {
+  joinGameRoom(socket: Socket, roomId: string) {
     socket.join(roomId);
   }
 
-  leaveGame(socket: Socket, roomId: string) {
+  leaveGameRoom(socket: Socket, roomId: string) {
     socket.leave(roomId);
   }
 

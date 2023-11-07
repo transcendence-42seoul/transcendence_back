@@ -1,42 +1,67 @@
+import { User } from 'src/user/user.entity';
 import {
   BaseEntity,
   Column,
   Entity,
   JoinColumn,
+  // ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Set } from './set.entity';
 
+export enum GameMode {
+  'LADDER_NORMAL' = 1,
+  'LADDER_HARD',
+  'CHALLENGEC_NORMAL',
+  'CHALLENGEC_HARD',
+}
+
+export type GameModeType =
+  | GameMode.LADDER_NORMAL
+  | GameMode.LADDER_HARD
+  | GameMode.CHALLENGEC_NORMAL
+  | GameMode.CHALLENGEC_HARD;
 @Entity()
 export class Game extends BaseEntity {
   @PrimaryGeneratedColumn()
   idx: number;
 
   @Column()
-  mode: number;
+  game_mode: GameModeType;
 
   @Column()
   start_time: Date;
 
   @Column()
-  player1: number;
+  end_time: Date;
 
-  @Column()
-  player2: number;
+  // @ManyToOne(() => User, { cascade: true, eager: true, onDelete: 'CASCADE' })
+  // @JoinColumn({ name: 'player1_idx' })
+  // player1: User;
 
-  @Column()
-  player1_set_point: number;
+  // @ManyToOne(() => User, { cascade: true, eager: true, onDelete: 'CASCADE' })
+  // @JoinColumn({ name: 'player2_idx' })
+  // player2: User;
 
-  @Column()
-  player2_set_point: number;
-
-  @Column()
-  set_number: number;
-
-  @OneToOne(() => Set, (set) => set.idx, {
-    eager: false,
+  @OneToOne(() => User, (user) => user.game, {
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
   })
-  @JoinColumn()
-  set_id: Set;
+  @JoinColumn({ name: 'player1_idx' })
+  player1: User;
+
+  @OneToOne(() => User, (user) => user.game, {
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'player2_idx' })
+  player2: User;
+
+  @Column()
+  player1_score: number;
+
+  @Column()
+  player2_score: number;
 }
