@@ -5,7 +5,6 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
   OneToMany,
-  JoinColumn,
 } from 'typeorm';
 import { ChatMessage } from './chat.message.entity';
 import { ChatParticipant } from './chat.participant.entity';
@@ -34,18 +33,12 @@ export class Chat extends BaseEntity {
   create_time: Date;
 
   @OneToMany(() => ChatMessage, (chatMessage) => chatMessage.chat, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'chat' })
   messages: ChatMessage[];
 
   @OneToMany(() => ChatParticipant, (chatParticipant) => chatParticipant.chat, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'participants' })
   participants: ChatParticipant[];
 }

@@ -2,6 +2,7 @@ import {
   BaseEntity,
   Column,
   Entity,
+  JoinColumn,
   PrimaryGeneratedColumn,
   CreateDateColumn,
   ManyToOne,
@@ -22,11 +23,15 @@ export class ChatMessage extends BaseEntity {
 
   @ManyToOne(() => Chat, (chat) => chat.messages, {
     eager: false,
+    onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'chat' })
   chat: Chat;
 
   @ManyToOne(() => User, (user) => user.messages, {
     eager: false,
+    onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'user' })
   user: User;
 }

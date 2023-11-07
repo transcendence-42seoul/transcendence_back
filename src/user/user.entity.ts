@@ -9,7 +9,6 @@ import {
   BaseEntity,
   Column,
   Entity,
-  JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -50,66 +49,42 @@ export class User extends BaseEntity {
   tfa_secret: TFASecret;
 
   @OneToOne(() => Avatar, (avatar) => avatar.user, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'avatar' })
   avatar: Avatar;
 
   @OneToOne(() => Record, (record) => record.user, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'record' })
   record: Record;
 
   @OneToOne(() => Ranking, (ranking) => ranking.user, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'ranking' })
   ranking: Ranking;
 
   @OneToMany(() => FriendRequest, (friendRequest) => friendRequest.requester, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'requester' })
   requester: FriendRequest[];
 
   @OneToMany(() => FriendRequest, (friendRequest) => friendRequest.requested, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'requested' })
   requested: FriendRequest[];
 
   @OneToMany(() => Ban, (ban) => ban.banner, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'banner' })
   banner: Ban[];
 
   @OneToMany(() => ChatParticipant, (chatParticipant) => chatParticipant.user, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'participants' })
   participants: ChatParticipant[];
 
   @OneToMany(() => ChatMessage, (chatMessage) => chatMessage.user, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'messages' })
   messages: ChatMessage[];
 }

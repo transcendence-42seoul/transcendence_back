@@ -39,7 +39,6 @@ export class AuthController {
   async loginWith42Callback(@Query('code') code: string, @Res() res: Response) {
     try {
       const token = await this.authService.getTokenFrom42(code);
-      console.log(token);
 
       res.json(token);
     } catch (error) {

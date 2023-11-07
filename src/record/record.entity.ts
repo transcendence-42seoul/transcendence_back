@@ -3,6 +3,7 @@ import {
   BaseEntity,
   Column,
   Entity,
+  JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -14,7 +15,9 @@ export class Record extends BaseEntity {
 
   @OneToOne(() => User, (user) => user.record, {
     eager: false,
+    onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'user' })
   user: User;
 
   @Column({ nullable: false })
