@@ -95,9 +95,6 @@ export class ChatService {
     const chat = await this.chatRepository.findOne({ where: { idx } });
     if (!chat) throw new NotFoundException(`Chat with idx "${idx}" not found`);
 
-    // await this.chatParticipantRepository.delete({
-    //   chat: { idx },
-    // });
     await this.chatRepository.remove(chat);
   }
 }
