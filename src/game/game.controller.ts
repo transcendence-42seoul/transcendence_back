@@ -21,6 +21,8 @@ export class GameController {
     // db 생성 :
     const game = await this.gameService.createGame(body);
     // game entity idx로 소켓 room 생성
+
+    // home socket room에서 A에게 성공 전송
     return game;
     // socket id를 room에 연결 => gateway쪽에서 처리
     // game ready page 이동 => 프론트엔드에서 설정
