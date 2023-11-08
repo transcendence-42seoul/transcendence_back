@@ -5,10 +5,12 @@ import { Ranking } from 'src/ranking/ranking.entity';
 import { Record } from 'src/record/record.entity';
 import { ChatMessage } from 'src/chat/chat.message.entity';
 import { ChatParticipant } from 'src/chat/chat.participant.entity';
+import { Game } from 'src/game/entities/game.entity';
 import {
   BaseEntity,
   Column,
   Entity,
+  JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -78,21 +80,20 @@ export class User extends BaseEntity {
   })
   banner: Ban[];
 
-  // @OneToMany(() => Game, (game) => game.idx, {
-  //   cascade: true,
-  //   eager: true,
-  //   onDelete: 'CASCADE',
-  // })
-  // @JoinColumn({ name: 'game' })
-  // record_games: Game[];
+  @OneToMany(() => Game, (game) => game.idx, {
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  record_games: Game[];
 
-  // @OneToOne(() => Ranking, (ranking) => ranking.user, {
-  //   cascade: true,
-  //   eager: true,
-  //   onDelete: 'CASCADE',
-  // })
-  // @Column({ nullable: true })
-  // current_game: Game;
+  @OneToOne(() => Game, {
+    nullable: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn()
+  current_game: Game;
 
   @OneToMany(() => ChatParticipant, (chatParticipant) => chatParticipant.user, {
     eager: true,

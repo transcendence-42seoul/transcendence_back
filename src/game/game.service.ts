@@ -77,6 +77,7 @@ export class GameService {
   async getUserCurrentGameInfo(userId: string) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
+    return user.current_game;
     // return user.current_game;
     // return user.current_game;
     // 아직 user에 current game 저장을 어떻게 할지 몰라서 진행을 못함.

@@ -2,6 +2,7 @@ import { DataSource, Repository } from 'typeorm';
 import { GameModeType, Game } from './entities/game.entity';
 import { Injectable } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
+import { User } from 'src/user/user.entity';
 
 @Injectable()
 export class GameRepository extends Repository<Game> {
@@ -11,8 +12,8 @@ export class GameRepository extends Repository<Game> {
 
   async createGame(
     game_mode: GameModeType,
-    player1: number,
-    player2: number,
+    player1: User,
+    player2: User,
   ): Promise<Game> {
     const game = this.create({
       game_mode,

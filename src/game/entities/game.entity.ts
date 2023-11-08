@@ -1,11 +1,11 @@
-// import { User } from 'src/user/user.entity';
+import { User } from 'src/user/user.entity';
 import {
   BaseEntity,
   Column,
   Entity,
   // JoinColumn,
   // ManyToOne,
-  // OneToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
@@ -36,11 +36,27 @@ export class Game extends BaseEntity {
   @Column({ nullable: false })
   end_time: Date;
 
-  @Column()
-  player1: number;
+  // @Column()
+  // player1: User;
 
-  @Column()
-  player2: number;
+  // @Column()
+  // player2: User;
+
+  @OneToOne(() => User, (user) => user.idx, {
+    nullable: false,
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  player1: User;
+
+  @OneToOne(() => User, (user) => user.idx, {
+    nullable: false,
+    cascade: true,
+    eager: true,
+    onDelete: 'CASCADE',
+  })
+  player2: User;
 
   @Column()
   player1_score: number;
