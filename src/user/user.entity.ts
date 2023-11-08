@@ -97,11 +97,19 @@ export class User extends BaseEntity {
   @JoinColumn({ name: 'banner' })
   banner: Ban[];
 
-  @OneToMany(() => Game, (game) => game.idx, {
-    cascade: true,
-    eager: true,
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'game' })
-  game: Game;
+  // @OneToMany(() => Game, (game) => game.idx, {
+  //   cascade: true,
+  //   eager: true,
+  //   onDelete: 'CASCADE',
+  // })
+  // @JoinColumn({ name: 'game' })
+  // record_games: Game[];
+
+  // @OneToOne(() => Ranking, (ranking) => ranking.user, {
+  //   cascade: true,
+  //   eager: true,
+  //   onDelete: 'CASCADE',
+  // })
+  // @Column({ nullable: true })
+  // current_game: Game;
 }

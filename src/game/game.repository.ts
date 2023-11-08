@@ -1,6 +1,7 @@
 import { DataSource, Repository } from 'typeorm';
 import { GameModeType, Game } from './entities/game.entity';
 import { Injectable } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class GameRepository extends Repository<Game> {

@@ -8,6 +8,7 @@ import {
   // OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 
 const GameModeType = {
   LADDER_NORMAL: 1,
@@ -22,6 +23,9 @@ export type GameModeType = (typeof GameModeType)[keyof typeof GameModeType];
 export class Game extends BaseEntity {
   @PrimaryGeneratedColumn()
   idx: number;
+
+  @Column({ type: 'uuid', default: uuidv4() }) // 이 부분이 추가됨
+  room_id: string;
 
   @Column({ nullable: false })
   game_mode: GameModeType;

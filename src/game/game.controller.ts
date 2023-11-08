@@ -15,7 +15,7 @@ export class GameController {
     return 'hello this is game';
   }
 
-  @Post('/request/:player1_idx/:requestedIdx') // 지금은 못함, body 플레이어 모드, idx
+  @Post('/request') // 지금은 못함, body 플레이어 모드, idx
   async acceptGame(@MessageBody() body: CreateGameDto) {
     // 그 유저 online 상태 상태인지 확인
     // db 생성 :
@@ -26,7 +26,12 @@ export class GameController {
     // game ready page 이동 => 프론트엔드에서 설정
   }
 
-  // 현재 내가 참가하고 있는 게임의 정보
+  // 현재 내가 참가하고 있는 게임의 정보 얻기
+  @Get('/info/:userIdx')
+  async getUserCurrentGameInfo(@MessageBody() userId: string) {
+    const game = await this.gameService.getUserCurrentGameInfo(userId);
+    return game;
+  }
 
   //playing game
   //game result

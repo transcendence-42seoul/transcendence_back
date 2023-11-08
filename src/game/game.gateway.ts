@@ -8,10 +8,9 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { GameService } from './game.service';
-import { CreateGameDto } from './dto/create-game.dto';
-// import { UpdateGameDto } from './dto/update-game.dto';
 import { Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
+import { JoinRoomDto } from './dto/join.room.dto';
 
 @WebSocketGateway({ namespace: 'games' })
 export class GameGateway
@@ -21,7 +20,6 @@ export class GameGateway
   private logger = new Logger('chat'); // 테스트용 다쓰면 지워도 됨.
 
   handleDisconnect(@ConnectedSocket() socket: Socket) {
-    //
     this.logger.log('disconnected : ' + socket.id);
   }
 
@@ -34,35 +32,18 @@ export class GameGateway
   }
 
   @SubscribeMessage('joinGame')
-  create(
-    @MessageBody() createGameDto: CreateGameDto,
+  joinGame(
+    @MessageBody() body: JoinRoomDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    this.gameService.joinGame(socket, 'roomId');
+    this.gameService.joinGameRoom(socket, body.room_id.toString());
   }
 
-  // @SubscribeMessage('createGame')
-  // create(@MessageBody() createGameDto: CreateGameDto) {
-  //   return this.gameService.create(createGameDto);
-  // }
-
-  // @SubscribeMessage('findAllGame')
-  // findAll() {
-  //   return this.gameService.findAll();
-  // }
-
-  // @SubscribeMessage('findOneGame')
-  // findOne(@MessageBody() id: number) {
-  //   return this.gameService.findOne(id);
-  // }
-
-  // @SubscribeMessage('updateGame')
-  // update(@MessageBody() updateGameDto: UpdateGameDto) {
-  //   return this.gameService.update(updateGameDto.id, updateGameDto);
-  // }
-
-  // @SubscribeMessage('removeGame')
-  // remove(@MessageBody() id: number) {
-  //   return this.gameService.remove(id);
-  // }
+  @SubscribeMessage('leaveGame')
+  leaveGame(
+    @MessageBody() body: JoinRoomDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    this.gameService.leaveGameRoom(socket, body.room_id.toString());
+  }
 }
