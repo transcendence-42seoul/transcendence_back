@@ -3,13 +3,12 @@ import { Ban } from 'src/ban/ban.entity';
 import { FriendRequest } from 'src/friend/friend.request.entity';
 import { Ranking } from 'src/ranking/ranking.entity';
 import { Record } from 'src/record/record.entity';
-import { Game } from 'src/game/entities/game.entity';
+import { ChatMessage } from 'src/chat/chat.message.entity';
+import { ChatParticipant } from 'src/chat/chat.participant.entity';
 import {
   BaseEntity,
   Column,
   Entity,
-  JoinColumn,
-  // ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -50,51 +49,33 @@ export class User extends BaseEntity {
   tfa_secret: TFASecret;
 
   @OneToOne(() => Avatar, (avatar) => avatar.user, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'avatar' })
   avatar: Avatar;
 
   @OneToOne(() => Record, (record) => record.user, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'record' })
   record: Record;
 
   @OneToOne(() => Ranking, (ranking) => ranking.user, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'ranking' })
   ranking: Ranking;
 
   @OneToMany(() => FriendRequest, (friendRequest) => friendRequest.requester, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'requester' })
   requester: FriendRequest[];
 
   @OneToMany(() => FriendRequest, (friendRequest) => friendRequest.requested, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'requested' })
   requested: FriendRequest[];
 
   @OneToMany(() => Ban, (ban) => ban.banner, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'banner' })
   banner: Ban[];
 
   // @OneToMany(() => Game, (game) => game.idx, {
@@ -112,4 +93,14 @@ export class User extends BaseEntity {
   // })
   // @Column({ nullable: true })
   // current_game: Game;
+
+  @OneToMany(() => ChatParticipant, (chatParticipant) => chatParticipant.user, {
+    eager: true,
+  })
+  participants: ChatParticipant[];
+
+  @OneToMany(() => ChatMessage, (chatMessage) => chatMessage.user, {
+    eager: true,
+  })
+  messages: ChatMessage[];
 }

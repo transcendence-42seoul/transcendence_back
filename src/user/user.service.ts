@@ -70,38 +70,7 @@ export class UserService {
     const user = await this.userRepository.findOne({ where: { idx } });
     if (!user) throw new NotFoundException(`User with idx ${idx} not found`);
 
-    const requester = user.requester;
-    for (let j = 0; j < requester.length; j++) {
-      if (requester[j]) {
-        const pair = requester[j].friendRequestPair;
-        if (pair) await this.friendRequestPairRepository.remove(pair);
-        await this.friendRequestRepository.remove(requester[j]);
-      }
-    }
-
-    const requested = user.requested;
-    for (let j = 0; j < requested.length; j++) {
-      if (requested[j]) {
-        const pair = requested[j].friendRequestPair;
-        if (pair) await this.friendRequestPairRepository.remove(pair);
-        await this.friendRequestRepository.remove(requested[j]);
-      }
-    }
-
-    const banner = user.banner;
-    for (let j = 0; j < banner.length; j++) {
-      if (banner[j]) {
-        await this.banRepository.remove(banner[j]);
-      }
-    }
-
-    await this.avatarRepository.remove(user.avatar);
-    await this.rankingRepository.remove(user.ranking);
-    await this.recordRepository.remove(user.record);
-
-    if (user) {
-      await this.userRepository.remove(user);
-    }
+    await this.userRepository.remove(user);
   }
 
   async deleteAll(): Promise<void> {

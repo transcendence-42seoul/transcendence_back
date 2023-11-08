@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
 import { FriendRequest } from './friend.request.entity';
 
 @Entity()
@@ -20,7 +26,9 @@ export class FriendRequestPair {
     (friendRequest) => friendRequest.friendRequestPair,
     {
       eager: false,
+      onDelete: 'CASCADE',
     },
   )
+  @JoinColumn({ name: 'friendRequest' })
   friendRequest: FriendRequest;
 }

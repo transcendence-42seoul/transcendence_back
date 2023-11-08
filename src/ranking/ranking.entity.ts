@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
+import {
+  Entity,
+  JoinColumn,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+} from 'typeorm';
 import { User } from '../user/user.entity';
 
 @Entity()
@@ -8,7 +14,9 @@ export class Ranking {
 
   @OneToOne(() => User, (user) => user.ranking, {
     eager: false,
+    onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'user' })
   user: User;
 
   @Column({ type: 'integer' })
