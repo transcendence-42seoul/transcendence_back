@@ -10,7 +10,7 @@ import {
   BaseEntity,
   Column,
   Entity,
-  JoinColumn,
+  // JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -80,20 +80,15 @@ export class User extends BaseEntity {
   })
   banner: Ban[];
 
-  @OneToMany(() => Game, (game) => game.idx, {
-    cascade: true,
+  @OneToOne(() => Game, (game) => game.gameHost, {
     eager: true,
-    onDelete: 'CASCADE',
   })
-  record_games: Game[];
+  current_host: Game;
 
-  @OneToOne(() => Game, {
-    nullable: true,
+  @OneToOne(() => Game, (game) => game.gameGuest, {
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn()
-  current_game: Game;
+  current_guest: Game;
 
   @OneToMany(() => ChatParticipant, (chatParticipant) => chatParticipant.user, {
     eager: true,

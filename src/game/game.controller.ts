@@ -30,11 +30,16 @@ export class GameController {
 
   // 현재 내가 참가하고 있는 게임의 정보 얻기
   @Get('/info/:userIdx')
-  async getUserCurrentGameInfo(@MessageBody() userId: string) {
-    const game = await this.gameService.getUserCurrentGameInfo(userId);
+  async getUserCurrentHostInfo(@MessageBody() userId: string) {
+    const game = await this.gameService.getUserCurrentHostInfo(userId);
     return game;
   }
 
+  @Get('/info/:userIdx')
+  async getUserCurrentGuestInfo(@MessageBody() userId: string) {
+    const game = await this.gameService.getUserCurrentGuestInfo(userId);
+    return game;
+  }
   //playing game
   //game result
   @Get('/response')

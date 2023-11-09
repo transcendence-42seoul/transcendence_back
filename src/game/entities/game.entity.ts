@@ -3,7 +3,7 @@ import {
   BaseEntity,
   Column,
   Entity,
-  // JoinColumn,
+  JoinColumn,
   // ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -36,31 +36,23 @@ export class Game extends BaseEntity {
   @Column({ nullable: false })
   end_time: Date;
 
-  // @Column()
-  // player1: User;
-
-  // @Column()
-  // player2: User;
-
-  @OneToOne(() => User, (user) => user.idx, {
-    nullable: false,
-    cascade: true,
-    eager: true,
+  @OneToOne(() => User, (user) => user.current_host, {
+    eager: false,
     onDelete: 'CASCADE',
   })
-  player1: User;
+  @JoinColumn({ name: 'current_host' })
+  gameHost: User;
 
-  @OneToOne(() => User, (user) => user.idx, {
-    nullable: false,
-    cascade: true,
-    eager: true,
+  @OneToOne(() => User, (user) => user.current_guest, {
+    eager: false,
     onDelete: 'CASCADE',
   })
-  player2: User;
+  @JoinColumn({ name: 'current_guest' })
+  gameGuest: User;
 
   @Column()
-  player1_score: number;
+  gameHost_score: number;
 
   @Column()
-  player2_score: number;
+  gameGuest_score: number;
 }

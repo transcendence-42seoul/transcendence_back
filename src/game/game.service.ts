@@ -18,8 +18,8 @@ export class GameService {
   async createGame(body: CreateGameDto) {
     const game = await this.gameRepository.createGame(
       body.game_mode,
-      body.player1,
-      body.player2,
+      body.gameHost,
+      body.gameGuest,
     );
     return game;
   }
@@ -33,12 +33,12 @@ export class GameService {
 
   async updateGameResult(
     gameIdx: number,
-    player1_score: number,
-    player2_score: number,
+    gameHost_score: number,
+    gameGuest_score: number,
   ) {
     const game = await this.gameRepository.findOne({ where: { idx: gameIdx } });
-    game.player1_score = player1_score;
-    game.player2_score = player2_score;
+    game.gameHost_score = gameHost_score;
+    game.gameGuest_score = gameGuest_score;
     await this.gameRepository.save(game);
     return game;
   }
@@ -74,14 +74,20 @@ export class GameService {
   }
 
   // 현재 user가 참가하고 있는 게임의 정보 얻기
-  async getUserCurrentGameInfo(userId: string) {
+  async getUserCurrentHostInfo(userId: string) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
-    return user.current_game;
+    return user.current_host;
     // return user.current_game;
     // return user.current_game;
     // 아직 user에 current game 저장을 어떻게 할지 몰라서 진행을 못함.
     // const user = await this.userRepository.findOne({ where: { idx: userIdx } });
     // return this.gameRepository.getUserCurrentGameInfo(userIdx);
+  }
+
+  async getUserCurrentGuestInfo(userId: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    return user.current_guest;
   }
 }

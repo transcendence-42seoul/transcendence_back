@@ -10,11 +10,11 @@ export class GameDto {
 
   @IsNotEmpty()
   @IsInt()
-  player1: number;
+  gameHost: number;
 
   @IsNotEmpty()
   @IsInt()
-  player2: number;
+  gameGuest: number;
 
   @IsNotEmpty()
   start_time: Date;
@@ -24,22 +24,22 @@ export class GameDto {
 
   @IsNotEmpty()
   @IsInt()
-  player1_score: number;
+  gameHost_score: number;
 
   @IsNotEmpty()
   @IsInt()
-  player2_score: number;
+  gameGuest_score: number;
 
   static convertDto(userData: any): GameDto {
     const gameDto = new GameDto();
 
     gameDto.game_idx = userData.idx;
-    gameDto.player1 = userData.player1;
-    gameDto.player2 = userData.player2;
+    gameDto.gameHost = userData.gameHost;
+    gameDto.gameGuest = userData.gameGuest;
     gameDto.start_time = userData.start_time;
     gameDto.end_time = userData.end_time;
-    gameDto.player1_score = userData.player1_score;
-    gameDto.player2_score = userData.player2_score;
+    gameDto.gameHost_score = userData.gameHost_score;
+    gameDto.gameGuest_score = userData.gameGuest_score;
 
     return gameDto;
   }

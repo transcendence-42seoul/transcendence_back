@@ -7,9 +7,9 @@ export class CreateGameDto {
 
   @IsNotEmpty()
   @IsInt()
-  player1: User;
+  gameHost: User;
 
   @IsNotEmpty()
   @IsInt()
-  player2: User;
+  gameGuest: User;
 }
