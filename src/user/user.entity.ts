@@ -80,15 +80,15 @@ export class User extends BaseEntity {
   })
   banner: Ban[];
 
-  @OneToOne(() => Game, (game) => game.gameHost, {
+  @OneToOne(() => Game, (game) => game.game_host, {
     eager: true,
   })
-  current_host: Game;
+  host: Game;
 
-  @OneToOne(() => Game, (game) => game.gameGuest, {
+  @OneToOne(() => Game, (game) => game.game_guest, {
     eager: true,
   })
-  current_guest: Game;
+  guest: Game;
 
   @OneToMany(() => ChatParticipant, (chatParticipant) => chatParticipant.user, {
     eager: true,

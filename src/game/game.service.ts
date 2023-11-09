@@ -54,8 +54,10 @@ export class GameService {
         : UserStatus.ONLINE;
     await this.userRepository.update(userIdx, { status: newStatus });
   }
+  //finish game 구현 시 game_status > false로 변경
 
-  // async abnormalOver(gameIdx: number) {}
+  // async abnormalOver(gameIdx: number) {} > game_status > false로 변경
+
   // game 요청
 
   // game 수락
@@ -73,11 +75,36 @@ export class GameService {
     socket.leave(roomId);
   }
 
-  // 현재 user가 참가하고 있는 게임의 정보 얻기
-  async getUserCurrentHostInfo(userId: string) {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+  // 현재 user가 참가하고 있는 게임의 정보 얻기 -> 관전자도 사용해야하는 api(id 로 찾아야할듯...)
+  async getUserHostGameInfo(userIdx: number) {
+    const user = await this.userRepository.findOne({
+      where: { idx: userIdx },
+    });
+    /**
+     * user{
+     *  current_game =>
+     * }
+     *
+     * game {
+     *  game_host =>
+     *  game_guest =>
+     * }
+     *
+     */
 
-    return user.current_host;
+    // seokchoi =>
+    // sangehan =>
+    // const gameList = user.host;
+    // let game = await this.gameRepository.findOne({
+    //   where: { game_host: user.host, game_status: true },
+    // });
+    // if (!game) {
+    //   game = await this.gameRepository.findOne({
+    //     where: { game_guest: user.host, game_status: true },
+    //   });
+    // }
+
+    return user.host;
     // return user.current_game;
     // return user.current_game;
     // 아직 user에 current game 저장을 어떻게 할지 몰라서 진행을 못함.
@@ -85,9 +112,9 @@ export class GameService {
     // return this.gameRepository.getUserCurrentGameInfo(userIdx);
   }
 
-  async getUserCurrentGuestInfo(userId: string) {
+  async getUserGuestGameInfo(userId: string) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
-    return user.current_guest;
+    return user.guest;
   }
 }

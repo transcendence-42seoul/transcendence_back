@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty } from 'class-validator';
+import { IsInt, IsNotEmpty, IsBoolean } from 'class-validator';
 export class GameDto {
   @IsNotEmpty()
   @IsInt()
@@ -7,6 +7,10 @@ export class GameDto {
   @IsNotEmpty()
   @IsInt()
   mode: number;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  game_status: boolean;
 
   @IsNotEmpty()
   @IsInt()

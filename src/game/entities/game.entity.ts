@@ -4,7 +4,6 @@ import {
   Column,
   Entity,
   JoinColumn,
-  // ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -28,6 +27,9 @@ export class Game extends BaseEntity {
   room_id: string;
 
   @Column({ nullable: false })
+  game_status: boolean;
+
+  @Column({ nullable: false })
   game_mode: GameModeType;
 
   @Column({ nullable: false })
@@ -36,19 +38,19 @@ export class Game extends BaseEntity {
   @Column({ nullable: false })
   end_time: Date;
 
-  @OneToOne(() => User, (user) => user.current_host, {
+  @OneToOne(() => User, (user) => user.host, {
     eager: false,
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'current_host' })
-  gameHost: User;
+  game_host: User;
 
-  @OneToOne(() => User, (user) => user.current_guest, {
+  @OneToOne(() => User, (user) => user.guest, {
     eager: false,
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'current_guest' })
-  gameGuest: User;
+  game_guest: User;
 
   @Column()
   gameHost_score: number;

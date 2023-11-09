@@ -12,15 +12,16 @@ export class GameRepository extends Repository<Game> {
 
   async createGame(
     game_mode: GameModeType,
-    gameHost: User,
-    gameGuest: User,
+    game_host: User,
+    game_guest: User,
   ): Promise<Game> {
     const game = this.create({
       game_mode,
+      game_status: true,
       start_time: new Date(),
       end_time: new Date(),
-      gameHost,
-      gameGuest,
+      game_host,
+      game_guest,
       gameHost_score: 0,
       gameGuest_score: 0,
     });

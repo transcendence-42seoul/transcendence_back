@@ -4,7 +4,9 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // app.enableCors();
+  // cors 무시
+  app.enableCors();
+
   // Graceful Shutdown 활성화
   //  app.enableShutdownHooks();
 
