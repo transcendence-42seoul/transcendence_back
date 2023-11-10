@@ -39,22 +39,22 @@ export class Game extends BaseEntity {
   end_time: Date;
 
   @OneToOne(() => User, (user) => user.host, {
-    eager: false,
+    eager: true,
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'current_host' })
+  @JoinColumn({ name: 'game_host' })
   game_host: User;
 
   @OneToOne(() => User, (user) => user.guest, {
-    eager: false,
+    eager: true,
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'current_guest' })
+  @JoinColumn({ name: 'game_guest' })
   game_guest: User;
 
-  @Column()
+  @Column({ nullable: false })
   gameHost_score: number;
 
-  @Column()
+  @Column({ nullable: false })
   gameGuest_score: number;
 }

@@ -4,8 +4,10 @@ import { Socket } from 'socket.io';
 import { UserRepository } from 'src/user/user.repository';
 import { GameRepository } from './game.repository';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserStatus } from 'src/user/user.entity';
+import { User, UserStatus } from 'src/user/user.entity';
 import { CreateGameDto } from './dto/create.game.dto';
+import { RecordService } from 'src/record/record.service';
+
 @Injectable()
 export class GameService {
   constructor(
@@ -13,6 +15,7 @@ export class GameService {
     private gameRepository: GameRepository,
     @InjectRepository(UserRepository)
     private userRepository: UserRepository,
+    private readonly recordService: RecordService,
   ) {}
 
   async createGame(body: CreateGameDto) {
@@ -24,9 +27,68 @@ export class GameService {
     return game;
   }
 
-  async deleteGame(gameIdx: number) {
-    const result = await this.gameRepository.delete(gameIdx);
-    return result;
+  async finishGame(gameIdx: number) {
+    const game = await this.gameRepository.findOne({ where: { idx: gameIdx } });
+    // console.log('BBB');
+    console.log(game.gameHost_score);
+    // game.game_host = await this.userRepository.findOne({ where: { idx:  } });
+    const winner =
+      game.gameHost_score > game.gameGuest_score
+        ? game.game_host
+        : game.game_guest;
+    // console.log('AAA');
+    console.log(winner);
+    console.log(game.idx);
+
+    console.log(game);
+    console.log(game.game_host);
+    console.log(game.gameHost_score);
+    console.log(game.game_host.idx);
+
+    game.game_host.record.total_game += 1;
+    game.game_guest.record.total_game += 1;
+    winner.record.total_win += 1;
+    if (game.game_mode >= 2) {
+      game.game_host.record.ladder_game += 1;
+      game.game_guest.record.ladder_game += 1;
+      winner.record.ladder_win += 1;
+    } else {
+      game.game_host.record.general_game += 1;
+      game.game_guest.record.general_game += 1;
+      winner.record.general_win += 1;
+    }
+    game.game_host.status = UserStatus.ONLINE;
+    game.game_guest.status = UserStatus.ONLINE;
+    game.game_status = false;
+    console.log(winner);
+
+    try {
+      await this.recordService.updateRecord(winner.idx, winner.record);
+    } catch (error) {
+      console.log(error);
+    }
+    const finish = await this.gameRepository.delete(gameIdx);
+    return finish;
+  }
+
+  async abnormalGame(gameIdx: number) {
+    const game = await this.gameRepository.findOne({ where: { idx: gameIdx } });
+    const connectUser =
+      game.game_host.status === UserStatus.ONLINE
+        ? game.game_host
+        : game.game_guest;
+    connectUser.record.total_game += 1;
+    connectUser.record.total_win += 1;
+    if (game.game_mode >= 2) {
+      connectUser.record.ladder_game += 1;
+      connectUser.record.ladder_win += 1;
+    } else {
+      connectUser.record.general_game += 1;
+      connectUser.record.general_win += 1;
+    }
+    connectUser.status = UserStatus.ONLINE;
+    const finish = await this.gameRepository.delete(gameIdx);
+    return finish;
   }
 
   // 점수 업데이트, 유저 상태 변화(offline 상태 변화는 client팀과 같이 [home gateway]), 탈주 처리(비정상 종료)
@@ -55,8 +117,6 @@ export class GameService {
     await this.userRepository.update(userIdx, { status: newStatus });
   }
   //finish game 구현 시 game_status > false로 변경
-
-  // async abnormalOver(gameIdx: number) {} > game_status > false로 변경
 
   // game 요청
 

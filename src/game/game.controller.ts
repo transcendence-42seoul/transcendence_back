@@ -1,6 +1,6 @@
 import { GameService } from './game.service';
 import { MiniChatGateway } from './../mini-chat/miniChat.gateway';
-import { Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, ParseIntPipe, Post } from '@nestjs/common';
 import { MessageBody } from '@nestjs/websockets';
 import { CreateGameDto } from './dto/create.game.dto';
 
@@ -26,6 +26,12 @@ export class GameController {
     return game;
     // socket id를 room에 연결 => gateway쪽에서 처리
     // game ready page 이동 => 프론트엔드에서 설정
+  }
+
+  @Post('/finish')
+  async finishGame(@Body('gameIdx', ParseIntPipe) gameIdx: number) {
+    const game = await this.gameService.finishGame(gameIdx);
+    return game;
   }
 
   // 현재 내가 참가하고 있는 게임의 정보 얻기
