@@ -29,21 +29,10 @@ export class GameService {
 
   async finishGame(gameIdx: number) {
     const game = await this.gameRepository.findOne({ where: { idx: gameIdx } });
-    // console.log('BBB');
-    console.log(game.gameHost_score);
-    // game.game_host = await this.userRepository.findOne({ where: { idx:  } });
     const winner =
       game.gameHost_score > game.gameGuest_score
         ? game.game_host
         : game.game_guest;
-    // console.log('AAA');
-    console.log(winner);
-    console.log(game.idx);
-
-    console.log(game);
-    console.log(game.game_host);
-    console.log(game.gameHost_score);
-    console.log(game.game_host.idx);
 
     game.game_host.record.total_game += 1;
     game.game_guest.record.total_game += 1;
@@ -60,10 +49,16 @@ export class GameService {
     game.game_host.status = UserStatus.ONLINE;
     game.game_guest.status = UserStatus.ONLINE;
     game.game_status = false;
-    console.log(winner);
 
     try {
-      await this.recordService.updateRecord(winner.idx, winner.record);
+      await this.recordService.updateRecord(
+        game.game_host.idx,
+        game.game_host.record,
+      );
+      await this.recordService.updateRecord(
+        game.game_guest.idx,
+        game.game_guest.record,
+      );
     } catch (error) {
       console.log(error);
     }
