@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User, UserStatus } from 'src/user/user.entity';
 import { CreateGameDto } from './dto/create.game.dto';
 import { RecordService } from 'src/record/record.service';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class GameService {
@@ -17,6 +18,7 @@ export class GameService {
     private userRepository: UserRepository,
     private readonly recordService: RecordService,
   ) {}
+  private logger = new Logger('chat'); // 테스트용 다쓰면 지워도 됨.
 
   async createGame(body: CreateGameDto) {
     const game = await this.gameRepository.createGame(
@@ -28,44 +30,40 @@ export class GameService {
   }
 
   async finishGame(gameIdx: number) {
-    const game = await this.gameRepository.findOne({ where: { idx: gameIdx } });
+    //gameIdx가 존재하는 애인지 확인하는 로직 추가해야하나?
+    const game = await this.gameRepository.findOne({
+      where: { idx: gameIdx },
+    });
+    const gameHost = await game.game_host;
+    const gameGuest = await game.game_guest;
     const winner =
-      game.gameHost_score > game.gameGuest_score
-        ? game.game_host
-        : game.game_guest;
-
-    game.game_host.record.total_game += 1;
-    game.game_guest.record.total_game += 1;
+      game.gameHost_score > game.gameGuest_score ? gameHost : gameGuest;
+    gameHost.record.total_game += 1;
+    gameGuest.record.total_game += 1;
     winner.record.total_win += 1;
     if (game.game_mode >= 2) {
-      game.game_host.record.ladder_game += 1;
-      game.game_guest.record.ladder_game += 1;
+      gameHost.record.ladder_game += 1;
+      gameGuest.record.ladder_game += 1;
       winner.record.ladder_win += 1;
     } else {
-      game.game_host.record.general_game += 1;
-      game.game_guest.record.general_game += 1;
+      gameHost.record.general_game += 1;
+      gameGuest.record.general_game += 1;
       winner.record.general_win += 1;
     }
-    game.game_host.status = UserStatus.ONLINE;
-    game.game_guest.status = UserStatus.ONLINE;
+    gameHost.status = UserStatus.ONLINE;
+    gameGuest.status = UserStatus.ONLINE;
     game.game_status = false;
 
     try {
-      await this.recordService.updateRecord(
-        game.game_host.idx,
-        game.game_host.record,
-      );
-      await this.recordService.updateRecord(
-        game.game_guest.idx,
-        game.game_guest.record,
-      );
+      await this.recordService.updateRecord(gameHost.idx, gameHost.record);
+      await this.recordService.updateRecord(gameGuest.idx, gameGuest.record);
     } catch (error) {
       console.log(error);
     }
     const finish = await this.gameRepository.delete(gameIdx);
     return finish;
   }
-
+  //abnormal game 다시 수정해야함
   async abnormalGame(gameIdx: number) {
     const game = await this.gameRepository.findOne({ where: { idx: gameIdx } });
     const connectUser =

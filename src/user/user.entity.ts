@@ -81,13 +81,13 @@ export class User extends BaseEntity {
   banner: Ban[];
 
   @OneToOne(() => Game, (game) => game.game_host, {
-    eager: false,
+    eager: true,
   })
   // @JoinColumn({ name: 'game_host' })
   host: Game;
 
   @OneToOne(() => Game, (game) => game.game_guest, {
-    eager: false,
+    eager: true,
   })
   // @JoinColumn({ name: 'game_guest' })
   guest: Game;

@@ -32,6 +32,7 @@ export class GameGateway
   afterInit() {
     this.logger.log('init');
   }
+
   // 특정 room에 속한 모든 socket 내보내기
   // @SubscribeMessage('deleteRoom') // 클라이언트에서 "leaveRoom" 메시지를 보내면 실행
   // handleLeaveRoom(client: Socket, data: { roomName: string }) {

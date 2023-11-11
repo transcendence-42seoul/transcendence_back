@@ -39,14 +39,14 @@ export class Game extends BaseEntity {
   end_time: Date;
 
   @OneToOne(() => User, (user) => user.host, {
-    eager: true,
+    lazy: true,
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'game_host' })
   game_host: User;
 
   @OneToOne(() => User, (user) => user.guest, {
-    eager: true,
+    lazy: true,
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'game_guest' })

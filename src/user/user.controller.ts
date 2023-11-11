@@ -33,12 +33,17 @@ export class UserController {
     return this.userService.findAllUsers();
   }
 
-  @Get('/:idx')
+  // @Get(/myUserData)
+  // async getMyUser() {
+  //   // return this.userService.
+  // }
+
+  @Get('/idx/:idx')
   async findByIdx(@Param('idx') idx: number) {
     return await this.userService.findByIdx(idx);
   }
 
-  @Get('/:id')
+  @Get('/id/:id')
   async findById(@Param('id') id: string) {
     return await this.userService.findById(id);
   }
