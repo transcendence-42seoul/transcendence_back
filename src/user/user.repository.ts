@@ -23,7 +23,7 @@ export class UserRepository extends Repository<User> {
       nickname,
       email,
       status: UserStatus.OFFLINE,
-      mfa_enabled: false,
+      tfa_enabled: false,
       avatar,
       ranking,
       record,

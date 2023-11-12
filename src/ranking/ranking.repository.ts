@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { Ranking } from './ranking.entity';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class RankingRepository extends Repository<Ranking> {
@@ -14,7 +14,6 @@ export class RankingRepository extends Repository<Ranking> {
     });
 
     await this.save(ranking);
-
     return ranking;
   }
 }

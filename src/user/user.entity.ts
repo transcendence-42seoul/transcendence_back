@@ -1,19 +1,30 @@
 import { Avatar } from 'src/avatar/avatar.entity';
+import { Ban } from 'src/ban/ban.entity';
+import { FriendRequest } from 'src/friend/friend.request.entity';
 import { Ranking } from 'src/ranking/ranking.entity';
 import { Record } from 'src/record/record.entity';
+import { ChatMessage } from 'src/chat/chat.message.entity';
+import { ChatParticipant } from 'src/chat/chat.participant.entity';
+import { Game } from 'src/game/entities/game.entity';
 import {
   BaseEntity,
   Column,
   Entity,
-  JoinColumn,
+  // JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 export enum UserStatus {
-  ONLINE = 'online',
-  OFFLINE = 'offline',
-  PLAYING = 'playing',
+  ONLINE = 'ONLINE',
+  OFFLINE = 'OFFLINE',
+  PLAYING = 'PLAYING',
+}
+
+export interface TFASecret {
+  otpauthUrl: string;
+  base32: string;
 }
 
 @Entity()
@@ -34,29 +45,60 @@ export class User extends BaseEntity {
   status: UserStatus;
 
   @Column({ nullable: false })
-  mfa_enabled: boolean;
+  tfa_enabled: boolean;
+
+  @Column({ type: 'jsonb', nullable: true })
+  tfa_secret: TFASecret;
 
   @OneToOne(() => Avatar, (avatar) => avatar.user, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'avatar' })
   avatar: Avatar;
 
   @OneToOne(() => Record, (record) => record.user, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'record' })
   record: Record;
 
   @OneToOne(() => Ranking, (ranking) => ranking.user, {
-    cascade: true,
     eager: true,
-    onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'ranking' })
   ranking: Ranking;
+
+  @OneToMany(() => FriendRequest, (friendRequest) => friendRequest.requester, {
+    eager: true,
+  })
+  requester: FriendRequest[];
+
+  @OneToMany(() => FriendRequest, (friendRequest) => friendRequest.requested, {
+    eager: true,
+  })
+  requested: FriendRequest[];
+
+  @OneToMany(() => Ban, (ban) => ban.banner, {
+    eager: true,
+  })
+  banner: Ban[];
+
+  @OneToOne(() => Game, (game) => game.game_host, {
+    eager: true,
+  })
+  // @JoinColumn({ name: 'game_host' })
+  host: Game;
+
+  @OneToOne(() => Game, (game) => game.game_guest, {
+    eager: true,
+  })
+  // @JoinColumn({ name: 'game_guest' })
+  guest: Game;
+
+  @OneToMany(() => ChatParticipant, (chatParticipant) => chatParticipant.user, {
+    eager: true,
+  })
+  participants: ChatParticipant[];
+
+  @OneToMany(() => ChatMessage, (chatMessage) => chatMessage.user, {
+    eager: true,
+  })
+  messages: ChatMessage[];
 }

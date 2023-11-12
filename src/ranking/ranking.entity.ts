@@ -1,25 +1,24 @@
-import { User } from '../user/user.entity';
 import {
-  BaseEntity,
-  Column,
   Entity,
-  OneToOne,
+  JoinColumn,
   PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
 } from 'typeorm';
+import { User } from '../user/user.entity';
 
 @Entity()
-export class Ranking extends BaseEntity {
+export class Ranking {
   @PrimaryGeneratedColumn()
   idx: number;
 
   @OneToOne(() => User, (user) => user.ranking, {
     eager: false,
+    onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'user' })
   user: User;
 
-  @Column({ nullable: true })
-  rank: number;
-
-  @Column({ nullable: false })
+  @Column({ type: 'integer' })
   score: number;
 }

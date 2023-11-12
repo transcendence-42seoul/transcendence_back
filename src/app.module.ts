@@ -11,6 +11,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeORMConfig } from './configs/typeorm.config';
 import { GameModule } from './game/game.module';
 import { MiniChatModule } from './mini-chat/miniChat.module';
+import { FriendModule } from './friend/friend.module';
+import { BanModule } from './ban/ban.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -23,6 +26,9 @@ import { MiniChatModule } from './mini-chat/miniChat.module';
     TypeOrmModule.forRoot(typeORMConfig),
     GameModule,
     MiniChatModule,
+    FriendModule,
+    BanModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
