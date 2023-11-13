@@ -17,11 +17,12 @@ export class GameGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   constructor(private readonly gameService: GameService) {}
-  private logger = new Logger('chat'); // 테스트용 다쓰면 지워도 됨.
+  private logger = new Logger('games');
 
   handleDisconnect(@ConnectedSocket() socket: Socket) {
     this.logger.log('disconnected : ' + socket.id);
-    const roomId = socket.rooms.values().next().value;
+    const roomId = [...socket.rooms.values()][1];
+    if (roomId === undefined) return;
     this.gameService.leaveGameRoom(socket, roomId);
   }
 
@@ -53,8 +54,8 @@ export class GameGateway
     @MessageBody() body: JoinRoomDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    this.gameService.joinGameRoom(socket, body.room_id.toString());
-    this.logger.log(socket.id + ' join in ' + body.room_id.toString());
+    this.gameService.joinGameRoom(socket, body.room_id);
+    this.logger.log(socket.id + ' join in ' + body.room_id);
   }
 
   @SubscribeMessage('joinTestGame')
@@ -63,7 +64,7 @@ export class GameGateway
     @ConnectedSocket() socket: Socket,
   ) {
     this.gameService.joinGameRoom(socket, 'testRoom');
-    this.logger.log(socket.id + ' join in ' + body.room_id.toString());
+    this.logger.log(socket.id + ' join in ' + body.room_id);
   }
 
   @SubscribeMessage('startGame')
@@ -72,7 +73,7 @@ export class GameGateway
     @ConnectedSocket() socket: Socket,
   ) {
     this.gameService.joinGameRoom(socket, 'testRoom');
-    this.logger.log(socket.id + ' join in ' + body.room_id.toString());
+    this.logger.log(socket.id + ' join in ' + body.room_id);
   }
 
   @SubscribeMessage('leaveGame')
@@ -80,7 +81,18 @@ export class GameGateway
     @MessageBody() body: JoinRoomDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    this.gameService.leaveGameRoom(socket, body.room_id.toString());
-    this.logger.log(socket.id + ' leave in ' + body.room_id.toString());
+    this.gameService.leaveGameRoom(socket, body.room_id);
+    this.logger.log(socket.id + ' leave in ' + body.room_id);
+  }
+
+  @SubscribeMessage('new_chat') // 해당하는 이벤트를 찾는다. 이 이벤트 이름은 프론트엔드에서 보내주는 이벤트 이름과 같아야한다.
+  handleChat(
+    @MessageBody() chat: string,
+    @ConnectedSocket() socket: Socket, // 이 소켓으로 서버는 emit, on을 할 수 있다.
+  ) {
+    if ([...socket.rooms.values()].length < 2) return;
+    const roomIdValue = [...socket.rooms.values()][1];
+    this.logger.log('new_chat : ' + chat + ' in ' + roomIdValue);
+    socket.to(roomIdValue).emit('receiveMessage', chat); // 자신을 제외한 모든 소켓에게 메시지를 보낸다. (자신에게는 보내지 않는다.)
   }
 }
