@@ -3,7 +3,6 @@ import {
   Controller,
   Get,
   Query,
-  Redirect,
   Res,
   Req,
   Body,
@@ -27,7 +26,6 @@ export class AuthController {
 
   //42Oauth
   @Get('oauth/42/authorize')
-  @Redirect()
   async loginWith42() {
     const clientId = `u-s4t2ud-decaba972e71347060f602c587ad21a8158074daa139ecd5dad4dc9faec4f603`;
     const redirectUrl = `http://localhost:3000/auth/oauth/42/callback`;
@@ -37,12 +35,26 @@ export class AuthController {
 
   @Get('oauth/42/callback')
   async loginWith42Callback(@Query('code') code: string, @Res() res: Response) {
+    // try {
+    //   const token = await this.authService.getTokenFrom42(code);
+
+    //   res.json(token);
+    // } catch (error) {
+    //   console.log('error', error);
+    // }
     try {
       const token = await this.authService.getTokenFrom42(code);
+      const userInfo = await this.authService.getUserInfoFrom42(
+        token.access_token,
+      );
+      const user = await this.userService.findOrCreateUser(userInfo.data);
 
-      res.json(token);
+      //cookie
+      res.cookie('user_idx', user.idx, { httpOnly: true, sameSite: 'lax' });
+      res.redirect('http://localhost:5174/main');
     } catch (error) {
       console.log('error', error);
+      res.status(500).send('Internal Server Error');
     }
   }
 
