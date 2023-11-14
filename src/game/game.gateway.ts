@@ -9,9 +9,16 @@ import {
 } from '@nestjs/websockets';
 import { GameService } from './game.service';
 import { Logger } from '@nestjs/common';
-import { Socket } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { JoinRoomDto } from './dto/join.room.dto';
-import { KyeEventDto } from './dto/key.event.dto';
+import { KyeEvent, KyeEventDto } from './dto/key.event.dto';
+import { CGame, DIRECTION, GameType } from './game.engine';
+
+type GameStoreType = {
+  [key: string]: CGame;
+};
+
+const GameStore: GameStoreType = {};
 
 @WebSocketGateway({ namespace: 'games' })
 export class GameGateway
@@ -19,9 +26,11 @@ export class GameGateway
 {
   constructor(private readonly gameService: GameService) {}
   private logger = new Logger('games');
+  private server = new Server();
 
   handleDisconnect(@ConnectedSocket() socket: Socket) {
     this.logger.log('disconnected : ' + socket.id);
+    if ([...socket.rooms.values()].length < 2) return;
     const roomId = [...socket.rooms.values()][1];
     if (roomId === undefined) return;
     this.gameService.leaveGameRoom(socket, roomId);
@@ -34,21 +43,6 @@ export class GameGateway
   afterInit() {
     this.logger.log('init');
   }
-
-  // 특정 room에 속한 모든 socket 내보내기
-  // @SubscribeMessage('deleteRoom') // 클라이언트에서 "leaveRoom" 메시지를 보내면 실행
-  // handleLeaveRoom(client: Socket, data: { roomName: string }) {
-  //   const { roomName } = data;
-  //   // 특정 room에 속한 모든 클라이언트 ID 가져오기
-  //   client.server.in(roomName).allSockets().then((socketIds) => {
-  //     socketIds.forEach((socketId) => {
-  //       const socket = client.server.sockets.get(socketId);
-  //       if (socket) {
-  //         socket.leave(roomName); // 모든 소켓을 room에서 나가게 함
-  //       }
-  //     });
-  //   });
-  // }
 
   @SubscribeMessage('joinGame')
   joinGame(
@@ -68,17 +62,55 @@ export class GameGateway
     this.logger.log(socket.id + ' join in ' + body.room_id);
   }
 
+  //update + 정상적인 game over
+  updateGame(roomId: string, socket: Socket) {
+    GameStore[roomId].update();
+    if (GameStore[roomId].over === true) {
+      socket.emit('endGame');
+      socket.to(roomId).emit('endGame');
+      if (GameStore[roomId].intervalId) {
+        clearInterval(GameStore[roomId].intervalId);
+        GameStore[roomId].intervalId = null;
+      }
+    }
+    socket.emit('gameData', GameStore[roomId].getGameData());
+    socket.to(roomId).emit('gameData', GameStore[roomId].getGameData());
+  }
+
   @SubscribeMessage('startGame')
   startGame(
     @MessageBody() body: JoinRoomDto,
     @ConnectedSocket() socket: Socket,
-  ) {}
+  ) {
+    if ([...socket.rooms.values()].length < 2) return;
+    const roomId = [...socket.rooms.values()][1];
+    if (roomId === undefined) return;
+    GameStore[roomId] = new CGame();
+    socket.emit('gameData', GameStore[roomId]);
+    socket.to(roomId).emit('gameData', GameStore[roomId]);
+
+    GameStore[roomId].intervalId = setInterval(
+      () => this.updateGame(roomId, socket),
+      1000 / 60,
+    );
+  }
 
   @SubscribeMessage('keyEvent')
   keyEvent(
     @MessageBody() body: KyeEventDto,
-    @ConnectedSocket() socket: Socket,
-  ) {}
+    // @ConnectedSocket() socket: Socket,
+  ) {
+    const roomId = body.room_id;
+    const cur_key: KyeEvent = body.key;
+    let direction;
+    if (cur_key === 'keyUp') direction = DIRECTION.UP;
+    else if (cur_key === 'keyDown') direction = DIRECTION.DOWN;
+    else if (cur_key === 'keyIdle') direction = DIRECTION.IDLE;
+
+    if (body.identity === 'Host') GameStore[roomId].host.move = direction;
+    else if (body.identity === 'Guest')
+      GameStore[roomId].guest.move = direction;
+  }
 
   @SubscribeMessage('leaveGame')
   leaveGame(
@@ -86,6 +118,7 @@ export class GameGateway
     @ConnectedSocket() socket: Socket,
   ) {
     this.gameService.leaveGameRoom(socket, body.room_id);
+    clearInterval(GameStore[body.room_id].intervalId);
     this.logger.log(socket.id + ' leave in ' + body.room_id);
   }
 
@@ -95,8 +128,9 @@ export class GameGateway
     @ConnectedSocket() socket: Socket, // 이 소켓으로 서버는 emit, on을 할 수 있다.
   ) {
     if ([...socket.rooms.values()].length < 2) return;
-    const roomIdValue = [...socket.rooms.values()][1];
-    this.logger.log('new_chat : ' + chat + ' in ' + roomIdValue);
-    socket.to(roomIdValue).emit('receiveMessage', chat); // 자신을 제외한 모든 소켓에게 메시지를 보낸다. (자신에게는 보내지 않는다.)
+    const roomId = [...socket.rooms.values()][1];
+    if (roomId === undefined) return;
+    this.logger.log('new_chat : ' + chat + ' in ' + roomId);
+    socket.broadcast.to(roomId).emit('receiveMessage', chat); // 자신을 제외한 모든 소켓에게 메시지를 보낸다. (자신에게는 보내지 않는다.)
   }
 }
