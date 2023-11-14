@@ -1,15 +1,11 @@
 import { GameService } from './game.service';
-import { MiniChatGateway } from './../mini-chat/miniChat.gateway';
 import { Body, Controller, Get, ParseIntPipe, Post } from '@nestjs/common';
 import { MessageBody } from '@nestjs/websockets';
 import { CreateGameDto } from './dto/create.game.dto';
 
 @Controller('game')
 export class GameController {
-  constructor(
-    private readonly miniChatGateway: MiniChatGateway,
-    private readonly gameService: GameService,
-  ) {}
+  constructor(private readonly gameService: GameService) {}
   @Get()
   connectGameSocket() {
     return 'hello this is game';

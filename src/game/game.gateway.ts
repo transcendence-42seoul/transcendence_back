@@ -11,6 +11,7 @@ import { GameService } from './game.service';
 import { Logger } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { JoinRoomDto } from './dto/join.room.dto';
+import { KyeEventDto } from './dto/key.event.dto';
 
 @WebSocketGateway({ namespace: 'games' })
 export class GameGateway
@@ -71,10 +72,13 @@ export class GameGateway
   startGame(
     @MessageBody() body: JoinRoomDto,
     @ConnectedSocket() socket: Socket,
-  ) {
-    this.gameService.joinGameRoom(socket, 'testRoom');
-    this.logger.log(socket.id + ' join in ' + body.room_id);
-  }
+  ) {}
+
+  @SubscribeMessage('keyEvent')
+  keyEvent(
+    @MessageBody() body: KyeEventDto,
+    @ConnectedSocket() socket: Socket,
+  ) {}
 
   @SubscribeMessage('leaveGame')
   leaveGame(
