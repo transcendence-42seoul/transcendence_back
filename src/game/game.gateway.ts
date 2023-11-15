@@ -12,7 +12,7 @@ import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { JoinRoomDto } from './dto/join.room.dto';
 import { KyeEvent, KyeEventDto } from './dto/key.event.dto';
-import { CGame, DIRECTION, GameType } from './game.engine';
+import { CGame, DIRECTION } from './game.engine';
 
 type GameStoreType = {
   [key: string]: CGame;
@@ -73,8 +73,8 @@ export class GameGateway
         GameStore[roomId].intervalId = null;
       }
     }
-    socket.emit('gameData', GameStore[roomId].getGameData());
-    socket.to(roomId).emit('gameData', GameStore[roomId].getGameData());
+    socket.emit('getGameData', GameStore[roomId].getGameData());
+    socket.to(roomId).emit('getGameData', GameStore[roomId].getGameData());
   }
 
   @SubscribeMessage('startGame')
@@ -82,9 +82,20 @@ export class GameGateway
     @MessageBody() body: JoinRoomDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    if ([...socket.rooms.values()].length < 2) return;
+    console.log([...socket.rooms.values()]);
+    if ([...socket.rooms.values()].length < 2) {
+      return;
+    }
+
     const roomId = [...socket.rooms.values()][1];
-    if (roomId === undefined) return;
+    if (roomId === undefined) {
+      this.logger.log('roomId is undefined');
+      return;
+    }
+    if (roomId in GameStore) {
+      return;
+    }
+    this.logger.log(`${roomId} game start!`);
     GameStore[roomId] = new CGame();
     socket.emit('gameData', GameStore[roomId]);
     socket.to(roomId).emit('gameData', GameStore[roomId]);
@@ -96,30 +107,32 @@ export class GameGateway
   }
 
   @SubscribeMessage('keyEvent')
-  keyEvent(
-    @MessageBody() body: KyeEventDto,
-    // @ConnectedSocket() socket: Socket,
-  ) {
+  keyEvent(@MessageBody() body: KyeEventDto) {
     const roomId = body.room_id;
     const cur_key: KyeEvent = body.key;
     let direction;
-    if (cur_key === 'keyUp') direction = DIRECTION.UP;
-    else if (cur_key === 'keyDown') direction = DIRECTION.DOWN;
-    else if (cur_key === 'keyIdle') direction = DIRECTION.IDLE;
+    if (cur_key == 'keyUp') direction = DIRECTION.UP;
+    else if (cur_key == 'keyDown') direction = DIRECTION.DOWN;
+    else if (cur_key == 'keyIdle') direction = DIRECTION.IDLE;
 
-    if (body.identity === 'Host') GameStore[roomId].host.move = direction;
+    if (body.identity === 'Host') GameStore[roomId].setHostMove(direction);
     else if (body.identity === 'Guest')
-      GameStore[roomId].guest.move = direction;
+      GameStore[roomId].setGuestMove(direction);
   }
 
-  @SubscribeMessage('leaveGame')
-  leaveGame(
-    @MessageBody() body: JoinRoomDto,
-    @ConnectedSocket() socket: Socket,
-  ) {
-    this.gameService.leaveGameRoom(socket, body.room_id);
+  /**
+   * 기준 room id를 받는 조건과 아닌 조건... 이 있나...?
+   */
+
+  @SubscribeMessage('endGame')
+  endGame(@MessageBody() body: JoinRoomDto) {
     clearInterval(GameStore[body.room_id].intervalId);
-    this.logger.log(socket.id + ' leave in ' + body.room_id);
+    this.deleteGame(body.room_id);
+    this.logger.log('game end in ' + body.room_id);
+  }
+
+  deleteGame(room_id: string) {
+    delete GameStore[room_id];
   }
 
   @SubscribeMessage('new_chat') // 해당하는 이벤트를 찾는다. 이 이벤트 이름은 프론트엔드에서 보내주는 이벤트 이름과 같아야한다.

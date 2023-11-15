@@ -8,18 +8,19 @@ export enum DIRECTION {
 }
 
 const ROUNDS: number[] = [7];
+const ROUND_SCORE = 7;
 const COLORS = ['#1abc9c', '#2ecc71', '#3498db', '#8c52ff', '#9b59b6'];
 
+const canvasWidth = 1400;
+const canvasHeight = 1000;
+
 const Ball = {
-  new: function (
-    this: { canvas: HTMLCanvasElement },
-    incrementedSpeed?: number,
-  ) {
+  new: function (incrementedSpeed?: number) {
     return {
       width: 18,
       height: 18,
-      x: this.canvas.width / 2 - 9,
-      y: this.canvas.height / 2 - 9,
+      x: canvasWidth / 2 - 9,
+      y: canvasHeight / 2 - 9,
       moveX: DIRECTION.IDLE,
       moveY: DIRECTION.IDLE,
       speed: incrementedSpeed || 7,
@@ -67,8 +68,8 @@ const PongPlayer = {
     return {
       width: 18,
       height: 180,
-      x: side === 'left' ? 150 : this.canvas.width - 150,
-      y: this.canvas.height / 2 - 35,
+      x: side === 'left' ? 150 : canvasWidth - 150,
+      y: canvasHeight / 2 - 35,
       score: 0,
       move: DIRECTION.IDLE,
       speed: 8,
@@ -89,6 +90,7 @@ export class CGame {
   public over: boolean;
   public round: number;
   public intervalId: NodeJS.Timeout | null;
+  public aiVersion: boolean;
 
   getGameData = (): GameType => {
     return {
@@ -104,13 +106,10 @@ export class CGame {
     };
   };
 
-  constructor() {
-    this.canvas.width = 1400;
-    this.canvas.height = 1000;
-
-    this.canvas.style.width = this.canvas.width / 2 + 'px';
-    this.canvas.style.height = this.canvas.height / 2 + 'px';
-
+  constructor(aiVersion: boolean = false) {
+    // this.canvas.style.width = canvasWidth / 2 + 'px';
+    // this.canvas.style.height = canvasHeight / 2 + 'px';
+    this.aiVersion = aiVersion;
     this.host = PongPlayer.new.call(this, 'left');
     this.guest = PongPlayer.new.call(this, 'right');
     this.ball = Ball.new.call(this);
@@ -122,15 +121,23 @@ export class CGame {
     this.color = '#8c52ff';
   }
 
+  setHostMove = (dir: number) => {
+    this.host.move = dir;
+  };
+
+  setGuestMove = (dir: number) => {
+    this.guest.move = dir;
+  };
+
   makeInit = () => {
-    this.canvas = document.querySelector('canvas')!;
-    this.context = this.canvas.getContext('2d');
+    // this.canvas = document.querySelector('canvas')!;
+    // this.context = this.canvas.getContext('2d');
 
-    this.canvas.width = 1400;
-    this.canvas.height = 1000;
+    // canvasWidth = 1400;
+    // canvasHeight = 1000;
 
-    this.canvas.style.width = this.canvas.width / 2 + 'px';
-    this.canvas.style.height = this.canvas.height / 2 + 'px';
+    // this.canvas.style.width = canvasWidth / 2 + 'px';
+    // this.canvas.style.height = canvasHeight / 2 + 'px';
 
     this.host = PongPlayer.new.call(this, 'left');
     this.guest = PongPlayer.new.call(this, 'right');
@@ -148,53 +155,18 @@ export class CGame {
   //   this.listen();
   // };
 
-  endGameMenu = (text: string) => {
-    if (this.context) {
-      // Change the canvas font size and color
-      this.context.font = '45px Courier New';
-      this.context.fillStyle = this.color;
-
-      // Draw the rectangle behind the 'Press any key to begin' text.
-      this.context.fillRect(
-        this.canvas.width / 2 - 350,
-        this.canvas.height / 2 - 48,
-        700,
-        100,
-      );
-
-      // Change the canvas color;
-      this.context.fillStyle = '#ffffff';
-
-      // Draw the end game menu text ('Game Over' and 'Winner')
-      this.context.fillText(
-        text,
-        this.canvas.width / 2,
-        this.canvas.height / 2 + 15,
-      );
-
-      setTimeout(() => {
-        this.makeInit();
-        // document.removeEventListener('keydown', this.keydownfunction);
-        // document.removeEventListener('keyup', this.keyupfunction);
-        // this.initialize();
-      }, 3000);
-    } else {
-      console.error('context is null');
-    }
-  };
-
   // Update all objects (move the player, ai, ball, increment the score, etc.)
   update = () => {
     if (!this.over) {
       // If the ball collides with the bound limits - correct the x and y coords.
       if (this.ball.x <= 0) this._resetTurn(this.guest, this.host);
-      if (this.ball.x >= this.canvas.width - this.ball.width)
+      if (this.ball.x >= canvasWidth - this.ball.width)
         this._resetTurn(this.host, this.guest);
       if (this.ball.y <= 0) this.ball.moveY = DIRECTION.DOWN;
-      if (this.ball.y >= this.canvas.height - this.ball.height)
+      if (this.ball.y >= canvasHeight - this.ball.height)
         this.ball.moveY = DIRECTION.UP;
 
-      // Move player if they player.move value was updated by a keyboard event
+      // Move Host if they player.move value was updated by a keyboard event
       if (this.host.move === DIRECTION.UP) this.host.y -= this.host.speed;
       else if (this.host.move === DIRECTION.DOWN)
         this.host.y += this.host.speed;
@@ -207,15 +179,14 @@ export class CGame {
         this.ball.moveY = [DIRECTION.UP, DIRECTION.DOWN][
           Math.round(Math.random())
         ];
-        this.ball.y =
-          Math.floor(Math.random() * this.canvas.height - 200) + 200;
+        this.ball.y = Math.floor(Math.random() * canvasHeight - 200) + 200;
         this.turn = null;
       }
 
       // If the player collides with the bound limits, update the x and y coords.
       if (this.host.y <= 0) this.host.y = 0;
-      else if (this.host.y >= this.canvas.height - this.host.height)
-        this.host.y = this.canvas.height - this.host.height;
+      else if (this.host.y >= canvasHeight - this.host.height)
+        this.host.y = canvasHeight - this.host.height;
 
       // Move ball in intended direction based on moveY and moveX values
       if (this.ball.moveY === DIRECTION.UP)
@@ -226,21 +197,28 @@ export class CGame {
       else if (this.ball.moveX === DIRECTION.RIGHT)
         this.ball.x += this.ball.speed;
 
+      // AI version
       // Handle ai (AI) UP and DOWN movement
-      if (this.guest.y > this.ball.y - this.guest.height / 2) {
-        if (this.ball.moveX === DIRECTION.RIGHT)
-          this.guest.y -= this.guest.speed / 1.5;
-        else this.guest.y -= this.guest.speed / 4;
-      }
-      if (this.guest.y < this.ball.y - this.guest.height / 2) {
-        if (this.ball.moveX === DIRECTION.RIGHT)
-          this.guest.y += this.guest.speed / 1.5;
-        else this.guest.y += this.guest.speed / 4;
-      }
+      // if (this.guest.y > this.ball.y - this.guest.height / 2) {
+      //   if (this.ball.moveX === DIRECTION.RIGHT)
+      //     this.guest.y -= this.guest.speed / 1.5;
+      //   else this.guest.y -= this.guest.speed / 4;
+      // }
+      // if (this.guest.y < this.ball.y - this.guest.height / 2) {
+      //   if (this.ball.moveX === DIRECTION.RIGHT)
+      //     this.guest.y += this.guest.speed / 1.5;
+      //   else this.guest.y += this.guest.speed / 4;
+      // }
+
+      // 1 : 1 version
+      // Move Guest if they player.move value was updated by a keyboard event
+      if (this.guest.move === DIRECTION.UP) this.guest.y -= this.guest.speed;
+      else if (this.guest.move === DIRECTION.DOWN)
+        this.guest.y += this.guest.speed;
 
       // Handle ai (AI) wall collision
-      if (this.guest.y >= this.canvas.height - this.guest.height)
-        this.guest.y = this.canvas.height - this.guest.height;
+      if (this.guest.y >= canvasHeight - this.guest.height)
+        this.guest.y = canvasHeight - this.guest.height;
       else if (this.guest.y <= 0) this.guest.y = 0;
 
       // Handle Player-Ball collisions
@@ -274,15 +252,11 @@ export class CGame {
 
     // Handle the end of round transition
     // Check to see if the player won the round.
-    if (this.host.score === 7) {
+    if (this.host.score === ROUND_SCORE) {
       // Check to see if there are any more rounds/levels left and display the victory screen if
       // there are not.
       if (!ROUNDS[this.round + 1]) {
         this.over = true;
-
-        // setTimeout(() => {
-        //   this.endGameMenu('Winner!');
-        // }, 1000);
       } else {
         // If there is another round, reset all the values and increment the round number.
         this.color = this._generateRoundColor();
@@ -294,12 +268,8 @@ export class CGame {
       }
     }
     // Check to see if the ai/AI has won the round.
-    else if (this.guest.score === 7) {
+    else if (this.guest.score === ROUND_SCORE) {
       this.over = true;
-
-      // setTimeout(() => {
-      //   this.endGameMenu('Game Over!');
-      // }, 1000);
     }
   };
 
