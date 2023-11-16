@@ -34,18 +34,6 @@ export class RecordService {
     if (!record) throw new NotFoundException(`Can't find User ${idx}'s record`);
 
     try {
-      if (
-        !recordDto ||
-        !recordDto.total_game ||
-        !recordDto.total_win ||
-        !recordDto.ladder_game ||
-        !recordDto.ladder_win ||
-        !recordDto.general_game ||
-        !recordDto.general_win
-      ) {
-        throw new BadRequestException('Invalid recordDto provided');
-      }
-
       if (recordDto.total_game !== undefined)
         record.total_game = recordDto.total_game;
       if (recordDto.total_win !== undefined)

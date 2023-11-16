@@ -5,7 +5,7 @@ import { UserRepository } from 'src/user/user.repository';
 import { ChatParticipantRepository } from './chat.participant.repository';
 import { ChatType } from './chat.entity';
 import { ChatParticipant } from './chat.participant.entity';
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class ChatParticipantService {

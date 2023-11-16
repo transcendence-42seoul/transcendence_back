@@ -9,6 +9,7 @@ import { RankingModule } from './ranking/ranking.module';
 import { AlarmModule } from './alarm/alarm.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeORMConfig } from './configs/typeorm.config';
+import { GameModule } from './game/game.module';
 import { FriendModule } from './friend/friend.module';
 import { BanModule } from './ban/ban.module';
 import { ChatModule } from './chat/chat.module';
@@ -22,6 +23,7 @@ import { ChatModule } from './chat/chat.module';
     RankingModule,
     AlarmModule,
     TypeOrmModule.forRoot(typeORMConfig),
+    GameModule,
     FriendModule,
     BanModule,
     ChatModule,

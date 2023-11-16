@@ -5,10 +5,12 @@ import { Ranking } from 'src/ranking/ranking.entity';
 import { Record } from 'src/record/record.entity';
 import { ChatMessage } from 'src/chat/chat.message.entity';
 import { ChatParticipant } from 'src/chat/chat.participant.entity';
+import { Game } from 'src/game/entities/game.entity';
 import {
   BaseEntity,
   Column,
   Entity,
+  // JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -77,6 +79,18 @@ export class User extends BaseEntity {
     eager: true,
   })
   banner: Ban[];
+
+  @OneToOne(() => Game, (game) => game.game_host, {
+    eager: true,
+  })
+  // @JoinColumn({ name: 'game_host' })
+  host: Game;
+
+  @OneToOne(() => Game, (game) => game.game_guest, {
+    eager: true,
+  })
+  // @JoinColumn({ name: 'game_guest' })
+  guest: Game;
 
   @OneToMany(() => ChatParticipant, (chatParticipant) => chatParticipant.user, {
     eager: true,

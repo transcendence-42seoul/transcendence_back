@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { Chat, ChatType } from './chat.entity';
 import { ChatParticipant } from './chat.participant.entity';
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class ChatRepository extends Repository<Chat> {
