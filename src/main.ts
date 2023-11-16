@@ -3,10 +3,6 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  // cors 무시
-  app.enableCors();
-
   // Graceful Shutdown 활성화
   //  app.enableShutdownHooks();
 
@@ -15,7 +11,12 @@ async function bootstrap() {
   //    console.log('Custom operation before shutdown');
   //    // 추가적인 종료 작업 수행 가능
   //  });
-
+  // cors 무시
+  app.enableCors({
+    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
   await app.listen(3000);
 }
 bootstrap();

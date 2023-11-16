@@ -11,12 +11,15 @@ import { ChatService } from './chat.service';
 import { Chat } from './chat.entity';
 import { ChatParticipant } from './chat.participant.entity';
 import { ChatParticipantService } from './chat.participant.service';
+import { CreateMessageDto } from './dto/message.dto';
+import { ChatMessageService } from './chat.message.service';
 
 @Controller('chats')
 export class ChatController {
   constructor(
     private chatService: ChatService,
     private chatParticipantService: ChatParticipantService,
+    private chatMessageService: ChatMessageService,
   ) {}
 
   @Post('/private/:idx')
@@ -83,5 +86,12 @@ export class ChatController {
   @Delete('/:idx')
   async deleteChat(@Param('idx', ParseIntPipe) idx: number): Promise<void> {
     await this.chatService.deleteChat(idx);
+  }
+
+  @Get('/message/:chatIdx')
+  async getChatMessages(
+    @Param('chatIdx', ParseIntPipe) chatIdx: number,
+  ): Promise<CreateMessageDto[]> {
+    return await this.chatMessageService.getChatMessages(chatIdx);
   }
 }
