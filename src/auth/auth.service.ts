@@ -5,10 +5,15 @@ import { lastValueFrom } from 'rxjs';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
 import { TFASecret } from 'src/user/user.entity';
+import { JwtService } from '@nestjs/jwt';
+import { LoginRequestDto } from './dto/login.request.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   //42Oauth
   async getTokenFrom42(code: string): Promise<any> {
@@ -82,5 +87,21 @@ export class AuthService {
       console.error('Error in validateTFAToken:', error);
       return false;
     }
+  }
+
+  async jwtLogin(data: LoginRequestDto) {
+    const { id, user_idx } = data;
+
+    console.log('seokchoi = ' + process.env.SECRET_KEY);
+
+    const payload = { id, user_idx };
+    return this.jwtService.sign(payload, { secret: process.env.SECRET_KEY });
+  }
+
+  async parsingJwtData(token: string) {
+    const data = await this.jwtService.verify(token, {
+      secret: process.env.SECRET_KEY,
+    });
+    return data;
   }
 }

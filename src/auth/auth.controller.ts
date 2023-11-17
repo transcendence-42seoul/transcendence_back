@@ -49,12 +49,38 @@ export class AuthController {
       );
       const user = await this.userService.findOrCreateUser(userInfo.data);
 
-      //cookie
+      const newToken = await this.authService.jwtLogin({
+        id: user.id,
+        user_idx: user.idx,
+      });
       res.cookie('user_idx', user.idx, { httpOnly: true, sameSite: 'lax' });
-      res.redirect('http://localhost:5174/main');
+      res.cookie('token', newToken, { httpOnly: true, sameSite: 'lax' });
+      // const data = await this.authService.parsingJwtData(newToken);
+
+      res.redirect('http://localhost:5173/main');
     } catch (error) {
       console.log('error', error);
       res.status(500).send('Internal Server Error');
+    }
+  }
+
+  @Get()
+  async getMyData(@Req() req) {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        throw new Error('No authorization header');
+      }
+      const tokenPart = authHeader.split(' ');
+      if (tokenPart.length !== 2 || tokenPart[0] !== 'Bearer') {
+        throw new Error('Invalid authorization header');
+      }
+      const accessToken = tokenPart[1];
+
+      const data = await this.authService.parsingJwtData(accessToken);
+      return data;
+    } catch (error) {
+      throw error;
     }
   }
 
