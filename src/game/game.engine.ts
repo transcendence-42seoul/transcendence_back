@@ -91,6 +91,8 @@ export class CGame {
   public round: number;
   public intervalId: NodeJS.Timeout | null;
   public aiVersion: boolean;
+  public host_idx: number;
+  public guest_idx: number;
 
   getGameData = (): GameType => {
     return {

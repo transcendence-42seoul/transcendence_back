@@ -13,12 +13,20 @@ import { Server, Socket } from 'socket.io';
 import { JoinRoomDto } from './dto/join.room.dto';
 import { KyeEvent, KyeEventDto } from './dto/key.event.dto';
 import { CGame, DIRECTION } from './game.engine';
+// import { GameModeType, GameMode } from './entities/game.entity';
 
 type GameStoreType = {
   [key: string]: CGame;
 };
 
 const GameStore: GameStoreType = {};
+
+const NormalWaitingQueue = [];
+const HardWaitingQueue = [];
+
+interface LadderWaitingQueueType {
+  mode: 'normal' | 'hard';
+}
 
 @WebSocketGateway({ namespace: 'games' })
 export class GameGateway
@@ -43,6 +51,70 @@ export class GameGateway
   afterInit() {
     this.logger.log('init');
   }
+
+  @SubscribeMessage('joinLadderQueue')
+  joinLadderQueue(
+    @MessageBody() body: LadderWaitingQueueType,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    if (body.mode === 'normal') {
+      NormalWaitingQueue.push(socket);
+      if (NormalWaitingQueue.length >= 2) {
+        // this.createMatch(
+        //   GameMode.LADDER_NORMAL,
+        //   NormalWaitingQueue[0],
+        //   NormalWaitingQueue[1],
+        // );
+      }
+    } else if (body.mode === 'hard') {
+      HardWaitingQueue.push(socket);
+      if (HardWaitingQueue.length >= 2) {
+        // this.createMatch(
+        //   GameMode.LADDER_HARD,
+        //   HardWaitingQueue[0],
+        //   HardWaitingQueue[1],
+        // );
+      }
+    }
+    this.logger.log(socket.id + ' join in ' + body.mode + 'ladder queue');
+  }
+
+  @SubscribeMessage('cancelLadderQueue')
+  cancelLadderQueue(
+    @MessageBody() body: LadderWaitingQueueType,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    if (body.mode === 'normal') {
+      const index = NormalWaitingQueue.indexOf(socket);
+      if (index > -1) {
+        NormalWaitingQueue.splice(index, 1);
+      }
+    } else if (body.mode === 'hard') {
+      const index = HardWaitingQueue.indexOf(socket);
+      if (index > -1) {
+        HardWaitingQueue.splice(index, 1);
+      }
+    }
+    this.logger.log(socket.id + ' cancel waiting ladder queue ');
+  }
+
+  // createMatch(gameMode: GameModeType, host: Socket, guest: Socket) {
+  //   this.gameService.createGame({
+  //     game_mode: gameMode,
+  //     gameHost: host,
+  //     gameGuest: guest,
+  //   });
+  // this.gameService.joinGameRoom(socket, body.room_id);
+  // this.logger.log(socket.id + ' join in ' + body.room_id);
+  // }
+
+  // acceptChallengeMatch(
+  //   @MessageBody() body: JoinRoomDto,
+  //   @ConnectedSocket() socket: Socket,
+  // ) {
+  //   this.gameService.joinGameRoom(socket, body.room_id);
+  //   this.logger.log(socket.id + ' join in ' + body.room_id);
+  // }
 
   @SubscribeMessage('joinGame')
   joinGame(
@@ -121,7 +193,7 @@ export class GameGateway
   }
 
   /**
-   * 기준 room id를 받는 조건과 아닌 조건... 이 있나...?
+   * 기준 room id를 받는 조건과 아닌 조건... 이 있나ss...?
    */
 
   @SubscribeMessage('endGame')

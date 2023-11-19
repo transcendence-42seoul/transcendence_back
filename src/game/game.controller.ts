@@ -1,13 +1,39 @@
+import { JwtService } from '@nestjs/jwt';
 import { GameService } from './game.service';
-import { Body, Controller, Get, ParseIntPipe, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  ParseIntPipe,
+  Post,
+  Request,
+  Res,
+  Response,
+  UseGuards,
+} from '@nestjs/common';
 import { MessageBody } from '@nestjs/websockets';
 import { CreateGameDto } from './dto/create.game.dto';
+import { JwtAuthGuard } from 'src/auth/jwt/jwt.guard';
+import { AuthService } from 'src/auth/auth.service';
 
-@Controller('game')
+@Controller('gamegame')
 export class GameController {
-  constructor(private readonly gameService: GameService) {}
-  @Get()
-  connectGameSocket() {
+  constructor(
+    private readonly gameService: GameService,
+    private readonly authService: AuthService,
+  ) {}
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/jwt')
+  async getJwtData(@Request() req, @Response() res) {
+    console.log('잘 들어왔나 확인을 해야합니다. ' + req.user);
+    try {
+      const data = await this.authService.parsingJwtData(req.user);
+
+      console.log(data);
+    } catch (error) {
+      res.status(500).send('에러가 난 것 같아 jwt parsing에서');
+    }
     return 'hello this is game';
   }
 

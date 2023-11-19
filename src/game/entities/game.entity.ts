@@ -9,14 +9,14 @@ import {
 } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
-const GameModeType = {
+export const GameMode = {
   LADDER_NORMAL: 1,
   LADDER_HARD: 2,
   CHALLENGE_NORMAL: 3,
   CHALLENGE_HARD: 4,
 } as const;
 
-export type GameModeType = (typeof GameModeType)[keyof typeof GameModeType];
+export type GameModeType = (typeof GameMode)[keyof typeof GameMode];
 
 @Entity()
 export class Game extends BaseEntity {
