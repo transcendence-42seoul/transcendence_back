@@ -14,9 +14,12 @@ import { FriendRequestPairRepository } from 'src/friend/friend.request.pair.repo
 import { BanRepository } from 'src/ban/ban.repository';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import { JwtStrategy } from './jwt/jwt.stretgy';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot(),
     HttpModule,
     TypeOrmModule.forFeature([User]),
     PassportModule.register({ defaultStrategy: 'jwt', session: false }),
@@ -37,6 +40,7 @@ import { JwtModule } from '@nestjs/jwt';
     FriendRequestRepository,
     FriendRequestPairRepository,
     BanRepository,
+    JwtStrategy,
   ],
   exports: [AuthService],
 })

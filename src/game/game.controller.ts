@@ -1,4 +1,3 @@
-import { JwtService } from '@nestjs/jwt';
 import { GameService } from './game.service';
 import {
   Body,
@@ -7,7 +6,6 @@ import {
   ParseIntPipe,
   Post,
   Request,
-  Res,
   Response,
   UseGuards,
 } from '@nestjs/common';

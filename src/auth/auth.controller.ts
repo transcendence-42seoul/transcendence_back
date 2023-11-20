@@ -11,10 +11,12 @@ import {
   Param,
   Patch,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { UserService } from 'src/user/user.service';
+import { JwtAuthGuard } from './jwt/jwt.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -54,8 +56,7 @@ export class AuthController {
         user_idx: user.idx,
       });
       res.cookie('user_idx', user.idx, { httpOnly: true, sameSite: 'lax' });
-      res.cookie('token', newToken, { httpOnly: true, sameSite: 'lax' });
-      // const data = await this.authService.parsingJwtData(newToken);
+      res.cookie('token', newToken, { sameSite: 'lax' });
 
       res.redirect('http://localhost:5173/main');
     } catch (error) {
@@ -64,10 +65,14 @@ export class AuthController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get()
-  async getMyData(@Req() req) {
+  async getMyData(@Req() req, @Res() res) {
     try {
+      const abc = req.headers;
+      console.log('abc = ', abc);
       const authHeader = req.headers.authorization;
+      console.log('authHeader = ', authHeader);
       if (!authHeader) {
         throw new Error('No authorization header');
       }
@@ -78,9 +83,10 @@ export class AuthController {
       const accessToken = tokenPart[1];
 
       const data = await this.authService.parsingJwtData(accessToken);
+      console.log('data = ', data);
       return data;
     } catch (error) {
-      throw error;
+      res.status(500).send('Internal Server Error');
     }
   }
 

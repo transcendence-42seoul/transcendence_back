@@ -91,17 +91,12 @@ export class AuthService {
 
   async jwtLogin(data: LoginRequestDto) {
     const { id, user_idx } = data;
-
-    console.log('seokchoi = ' + process.env.SECRET_KEY);
-
     const payload = { id, user_idx };
-    return this.jwtService.sign(payload, { secret: process.env.SECRET_KEY });
+    return this.jwtService.sign(payload);
   }
 
   async parsingJwtData(token: string) {
-    const data = await this.jwtService.verify(token, {
-      secret: process.env.SECRET_KEY,
-    });
+    const data = await this.jwtService.verify(token);
     return data;
   }
 }
