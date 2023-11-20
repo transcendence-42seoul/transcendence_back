@@ -69,10 +69,7 @@ export class AuthController {
   @Get()
   async getMyData(@Req() req, @Res() res) {
     try {
-      const abc = req.headers;
-      console.log('abc = ', abc);
       const authHeader = req.headers.authorization;
-      console.log('authHeader = ', authHeader);
       if (!authHeader) {
         throw new Error('No authorization header');
       }
@@ -83,7 +80,7 @@ export class AuthController {
       const accessToken = tokenPart[1];
 
       const data = await this.authService.parsingJwtData(accessToken);
-      console.log('data = ', data);
+      res.status(200).send(data);
       return data;
     } catch (error) {
       res.status(500).send('Internal Server Error');
