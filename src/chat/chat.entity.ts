@@ -24,6 +24,12 @@ export class Chat extends BaseEntity {
   name: string;
 
   @Column({ nullable: false })
+  limit: number;
+
+  @Column({ nullable: false })
+  currentParticipant: number;
+
+  @Column({ nullable: false })
   type: ChatType;
 
   @Column({ nullable: true, comment: 'must be encrypted' })

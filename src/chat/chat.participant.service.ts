@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ChatRepository } from './chat.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from 'src/user/user.repository';
@@ -44,6 +48,13 @@ export class ChatParticipantService {
     if (!(await bcrypt.compare(password, chat.password)))
       throw new NotFoundException(`Password is incorrect`);
 
+    if (chat.currentParticipant >= chat.limit)
+      throw new BadRequestException(`Chat with idx "${chatIdx}" is full`);
+
+    chat.currentParticipant++;
+
+    await this.chatRepository.save(chat);
+
     return await this.chatParticipantRepository.createParticipant(chat, user);
   }
 
@@ -68,6 +79,24 @@ export class ChatParticipantService {
         `User with idx "${userIdx}" already joined chat with idx "${chatIdx}"`,
       );
 
+    if (chat.currentParticipant >= chat.limit)
+      throw new BadRequestException(`Chat with idx "${chatIdx}" is full`);
+
+    chat.currentParticipant++;
+
+    await this.chatRepository.save(chat);
+
     return await this.chatParticipantRepository.createParticipant(chat, user);
+  }
+
+  async getChatParticipants(chatIdx: number): Promise<ChatParticipant[]> {
+    const chat = await this.chatRepository.findOne({ where: { idx: chatIdx } });
+    if (!chat)
+      throw new NotFoundException(`Chat with idx "${chatIdx}" not found`);
+
+    return await this.chatParticipantRepository.find({
+      where: { chat: { idx: chatIdx } },
+      relations: ['user'],
+    });
   }
 }

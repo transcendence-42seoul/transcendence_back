@@ -27,16 +27,18 @@ export class ChatController {
     @Param('idx', ParseIntPipe) idx: number,
     @Body('name') name: string,
     @Body('password') password: string,
+    @Body('limit', ParseIntPipe) limit: number,
   ): Promise<Chat> {
-    return await this.chatService.createPrivate(idx, name, password);
+    return await this.chatService.createPrivate(idx, name, password, limit);
   }
 
   @Post('/public/:idx')
   async createPublic(
     @Param('idx', ParseIntPipe) idx: number,
     @Body('name') name: string,
+    @Body('limit', ParseIntPipe) limit: number,
   ): Promise<Chat> {
-    return await this.chatService.createPublic(idx, name);
+    return await this.chatService.createPublic(idx, name, limit);
   }
 
   @Post('/dm/:idx1/:idx2')
@@ -81,6 +83,13 @@ export class ChatController {
     @Param('chatIdx', ParseIntPipe) chatIdx: number,
   ): Promise<ChatParticipant> {
     return await this.chatParticipantService.joinPublicChat(userIdx, chatIdx);
+  }
+
+  @Get('/participants/:chatIdx')
+  async getChatParticipants(
+    @Param('chatIdx') chatIdx: number,
+  ): Promise<ChatParticipant[]> {
+    return await this.chatParticipantService.getChatParticipants(chatIdx);
   }
 
   @Delete('/:idx')

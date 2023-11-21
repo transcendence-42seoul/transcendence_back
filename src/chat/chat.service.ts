@@ -16,26 +16,32 @@ export class ChatService {
     private userRepository: UserRepository,
   ) {}
 
-  async createPrivate(idx: number, name: string, password: string) {
+  async createPrivate(
+    idx: number,
+    name: string,
+    password: string,
+    limit: number,
+  ) {
     if (!name) throw new NotFoundException('Name is required');
     if (!password) throw new NotFoundException('Password is required');
+    if (!limit) throw new NotFoundException('Limit is required');
 
     const user = await this.userRepository.findOne({ where: { idx } });
     if (!user) throw new NotFoundException(`User with idx "${idx}" not found`);
 
-    const chat = await this.chatRepository.createPrivate(name, password);
+    const chat = await this.chatRepository.createPrivate(name, password, limit);
     await this.chatParticipantRepository.createOwnerParticipant(chat, user);
 
     return chat;
   }
 
-  async createPublic(idx: number, name: string): Promise<Chat> {
+  async createPublic(idx: number, name: string, limit: number): Promise<Chat> {
     if (!name) throw new NotFoundException('Name is required');
 
     const user = await this.userRepository.findOne({ where: { idx } });
     if (!user) throw new NotFoundException(`User with idx "${idx}" not found`);
 
-    const chat = await this.chatRepository.createPublic(name);
+    const chat = await this.chatRepository.createPublic(name, limit);
     await this.chatParticipantRepository.createOwnerParticipant(chat, user);
     return chat;
   }
@@ -80,7 +86,6 @@ export class ChatService {
       .having('COUNT(participant.user.idx) = 2')
       .getOne();
 
-    console.log(DMChat);
     if (DMChat) return DMChat;
 
     const participant1 =
