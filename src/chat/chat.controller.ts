@@ -11,8 +11,8 @@ import { ChatService } from './chat.service';
 import { Chat } from './chat.entity';
 import { ChatParticipant } from './chat.participant.entity';
 import { ChatParticipantService } from './chat.participant.service';
-import { CreateMessageDto } from './dto/message.dto';
 import { ChatMessageService } from './chat.message.service';
+import { ChatMessage } from './chat.message.entity';
 
 @Controller('chats')
 export class ChatController {
@@ -97,10 +97,20 @@ export class ChatController {
     await this.chatService.deleteChat(idx);
   }
 
-  @Get('/message/:chatIdx')
+  @Get('/message/:chatIdx/:userIdx')
   async getChatMessages(
     @Param('chatIdx', ParseIntPipe) chatIdx: number,
-  ): Promise<CreateMessageDto[]> {
-    return await this.chatMessageService.getChatMessages(chatIdx);
+    @Param('userIdx', ParseIntPipe) userIdx: number,
+  ): Promise<ChatMessage[]> {
+    return await this.chatMessageService.getChatMessages(chatIdx, userIdx);
+  }
+
+  @Post('/message/:chatIdx/:userIdx')
+  async createChatMessage(
+    @Param('chatIdx', ParseIntPipe) chatIdx: number,
+    @Param('userIdx', ParseIntPipe) userIdx: number,
+    @Body('content') content: string,
+  ): Promise<ChatMessage> {
+    return this.chatMessageService.createChatMessage(chatIdx, userIdx, content);
   }
 }
