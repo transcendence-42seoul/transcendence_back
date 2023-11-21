@@ -10,6 +10,7 @@ import { ChatParticipantRepository } from './chat.participant.repository';
 import { ChatType } from './chat.entity';
 import { ChatParticipant } from './chat.participant.entity';
 import * as bcrypt from 'bcrypt';
+import { Role } from './chat.participant.entity';
 
 @Injectable()
 export class ChatParticipantService {
@@ -37,6 +38,11 @@ export class ChatParticipantService {
     if (chat.type !== ChatType.PRIVATE)
       throw new NotFoundException(`Chat with idx "${chatIdx}" is not private`);
 
+    const owner = await this.chatParticipantRepository.findOne({
+      where: { chat: { idx: chatIdx }, role: Role.OWNER },
+      relations: ['user'],
+    });
+
     const participant = await this.chatParticipantRepository.findOne({
       where: { user: { idx: userIdx }, chat: { idx: chatIdx } },
     });
@@ -44,6 +50,20 @@ export class ChatParticipantService {
       throw new NotFoundException(
         `User with idx "${userIdx}" already joined chat with idx "${chatIdx}"`,
       );
+
+    const blockByOwner = owner.user.blocker;
+    for (let i = 0; i < blockByOwner.length; i++) {
+      if (blockByOwner[i].blocked === user.idx) {
+        throw new BadRequestException(`You are blocked by owner`);
+      }
+    }
+
+    const blockByParticipant = user.blocker;
+    for (let i = 0; i < blockByParticipant.length; i++) {
+      if (blockByParticipant[i].blocked === owner.user.idx) {
+        throw new BadRequestException(`You are blocked by participant`);
+      }
+    }
 
     if (!(await bcrypt.compare(password, chat.password)))
       throw new NotFoundException(`Password is incorrect`);
@@ -71,6 +91,11 @@ export class ChatParticipantService {
     if (chat.type !== ChatType.PUBLIC)
       throw new NotFoundException(`Chat with idx "${chatIdx}" is not public`);
 
+    const owner = await this.chatParticipantRepository.findOne({
+      where: { chat: { idx: chatIdx }, role: Role.OWNER },
+      relations: ['user'],
+    });
+
     const participant = await this.chatParticipantRepository.findOne({
       where: { user: { idx: userIdx }, chat: { idx: chatIdx } },
     });
@@ -78,6 +103,20 @@ export class ChatParticipantService {
       throw new NotFoundException(
         `User with idx "${userIdx}" already joined chat with idx "${chatIdx}"`,
       );
+
+    const blockByOwner = owner.user.blocker;
+    for (let i = 0; i < blockByOwner.length; i++) {
+      if (blockByOwner[i].blocked === user.idx) {
+        throw new BadRequestException(`You are blocked by owner`);
+      }
+    }
+
+    const blockByParticipant = user.blocker;
+    for (let i = 0; i < blockByParticipant.length; i++) {
+      if (blockByParticipant[i].blocked === owner.user.idx) {
+        throw new BadRequestException(`You are blocked by participant`);
+      }
+    }
 
     if (chat.currentParticipant >= chat.limit)
       throw new BadRequestException(`Chat with idx "${chatIdx}" is full`);

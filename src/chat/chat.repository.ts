@@ -16,6 +16,7 @@ export class ChatRepository extends Repository<Chat> {
   ): Promise<Chat> {
     const participants = [participant1, participant2];
     const chat = this.create({
+      name: 'DM',
       limit: 2,
       currentParticipant: 2,
       type: ChatType.DM,

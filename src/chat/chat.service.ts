@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ChatRepository } from './chat.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from 'src/user/user.repository';
@@ -73,6 +77,20 @@ export class ChatService {
     });
     if (!user2)
       throw new NotFoundException(`User with idx "${idx2}" not found`);
+
+    const blockByUser1 = user1.blocker;
+    for (let i = 0; i < blockByUser1.length; i++) {
+      if (blockByUser1[i].blocked === user2.idx) {
+        throw new BadRequestException(`You are blocked`);
+      }
+    }
+
+    const blockByUser2 = user2.blocker;
+    for (let i = 0; i < blockByUser2.length; i++) {
+      if (blockByUser2[i].blocked === user1.idx) {
+        throw new BadRequestException(`You are blocked`);
+      }
+    }
 
     const DMChat = await this.chatRepository
       .createQueryBuilder('chat')

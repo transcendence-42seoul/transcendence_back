@@ -1,5 +1,5 @@
 import { Avatar } from 'src/avatar/avatar.entity';
-import { Ban } from 'src/ban/ban.entity';
+import { Block } from 'src/block/block.entity';
 import { FriendRequest } from 'src/friend/friend.request.entity';
 import { Ranking } from 'src/ranking/ranking.entity';
 import { Record } from 'src/record/record.entity';
@@ -75,10 +75,10 @@ export class User extends BaseEntity {
   })
   requested: FriendRequest[];
 
-  @OneToMany(() => Ban, (ban) => ban.banner, {
+  @OneToMany(() => Block, (block) => block.blocker, {
     eager: true,
   })
-  banner: Ban[];
+  blocker: Block[];
 
   @OneToOne(() => Game, (game) => game.game_host, {
     eager: true,

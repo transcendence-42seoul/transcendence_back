@@ -8,17 +8,17 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class Ban {
+export class Block {
   @PrimaryGeneratedColumn()
   idx: number;
 
-  @ManyToOne(() => User, (user) => user.banner, {
+  @ManyToOne(() => User, (user) => user.blocker, {
     eager: false,
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'banner' })
-  banner: User;
+  @JoinColumn({ name: 'blocker' })
+  blocker: User;
 
   @Column()
-  banned: number;
+  blocked: number;
 }

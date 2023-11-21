@@ -20,7 +20,7 @@ export class Chat extends BaseEntity {
   @PrimaryGeneratedColumn()
   idx: number;
 
-  @Column({ nullable: true })
+  @Column({ nullable: false })
   name: string;
 
   @Column({ nullable: false })

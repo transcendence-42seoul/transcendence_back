@@ -8,7 +8,7 @@ import { FriendRequestRepository } from './friend.request.repository';
 import { UserRepository } from 'src/user/user.repository';
 import { User } from 'src/user/user.entity';
 import { FriendRequestPairRepository } from './friend.request.pair.repository';
-import { BanRepository } from 'src/ban/ban.repository';
+import { BlockRepository } from 'src/block/block.repository';
 
 @Injectable()
 export class FriendService {
@@ -19,8 +19,8 @@ export class FriendService {
     private friendRequestRepository: FriendRequestRepository,
     @InjectRepository(FriendRequestPairRepository)
     private friendRequestPairRepository: FriendRequestPairRepository,
-    @InjectRepository(BanRepository)
-    private banRepository: BanRepository,
+    @InjectRepository(BlockRepository)
+    private blockRepository: BlockRepository,
   ) {}
 
   async allowFriend(idx1: number, idx2: number): Promise<void> {
@@ -59,13 +59,14 @@ export class FriendService {
     if (requesterUser.idx === requestedUser.idx)
       throw new BadRequestException('You cannot send friend request to you');
 
-    const bannedUsers = await this.banRepository.find({
+    const blockedUsers = await this.blockRepository.find({
       where: [
-        { banner: { idx: requestedIdx }, banned: requesterIdx },
-        { banner: { idx: requesterIdx }, banned: requestedIdx },
+        { blocker: { idx: requestedIdx }, blocked: requesterIdx },
+        { blocker: { idx: requesterIdx }, blocked: requestedIdx },
       ],
     });
-    if (bannedUsers.length === 1) throw new BadRequestException('Banned user');
+    if (blockedUsers.length === 1)
+      throw new BadRequestException('Blocked user');
 
     const friendRequest = await this.friendRequestRepository.findOne({
       where: [
