@@ -13,6 +13,7 @@ import { GameModule } from './game/game.module';
 import { FriendModule } from './friend/friend.module';
 import { BlockModule } from './block/block.module';
 import { ChatModule } from './chat/chat.module';
+import { KickModule } from './chat/kick/kick.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ChatModule } from './chat/chat.module';
     FriendModule,
     BlockModule,
     ChatModule,
+    KickModule,
   ],
   controllers: [AppController],
   providers: [AppService],
