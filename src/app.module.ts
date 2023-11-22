@@ -15,6 +15,7 @@ import { BlockModule } from './block/block.module';
 import { ChatModule } from './chat/chat.module';
 import { KickModule } from './chat/kick/kick.module';
 import { BanModule } from './chat/ban/ban.module';
+import { MuteModule } from './chat/mute/mute.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { BanModule } from './chat/ban/ban.module';
     ChatModule,
     KickModule,
     BanModule,
+    MuteModule,
   ],
   controllers: [AppController],
   providers: [AppService],

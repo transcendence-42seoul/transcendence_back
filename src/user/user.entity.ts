@@ -15,6 +15,7 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Mute } from 'src/chat/mute/mute.entity';
 
 export enum UserStatus {
   ONLINE = 'ONLINE',
@@ -84,6 +85,11 @@ export class User extends BaseEntity {
     eager: true,
   })
   banned: Ban[];
+
+  @OneToMany(() => Mute, (mute) => mute.muted, {
+    eager: true,
+  })
+  muted: Mute[];
 
   @OneToOne(() => Game, (game) => game.game_host, {
     eager: true,
