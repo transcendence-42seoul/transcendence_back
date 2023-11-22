@@ -42,6 +42,6 @@ import { ConfigModule } from '@nestjs/config';
     BanRepository,
     JwtStrategy,
   ],
-  exports: [AuthService],
+  exports: [AuthService, JwtStrategy],
 })
 export class AuthModule {}

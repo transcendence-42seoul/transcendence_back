@@ -95,8 +95,13 @@ export class AuthService {
     return this.jwtService.sign(payload);
   }
 
-  async parsingJwtData(token: string) {
-    const data = await this.jwtService.verify(token);
-    return data;
+  parsingJwtData(token: string) {
+    try {
+      const data = this.jwtService.verify(token);
+      return data;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   }
 }
