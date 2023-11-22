@@ -1,5 +1,6 @@
 import { Avatar } from 'src/avatar/avatar.entity';
 import { Block } from 'src/block/block.entity';
+import { Ban } from 'src/chat/ban/ban.entity';
 import { FriendRequest } from 'src/friend/friend.request.entity';
 import { Ranking } from 'src/ranking/ranking.entity';
 import { Record } from 'src/record/record.entity';
@@ -10,7 +11,6 @@ import {
   BaseEntity,
   Column,
   Entity,
-  // JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -79,6 +79,11 @@ export class User extends BaseEntity {
     eager: true,
   })
   blocker: Block[];
+
+  @OneToMany(() => Ban, (ban) => ban.banned, {
+    eager: true,
+  })
+  banned: Ban[];
 
   @OneToOne(() => Game, (game) => game.game_host, {
     eager: true,

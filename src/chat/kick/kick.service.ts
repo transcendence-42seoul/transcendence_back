@@ -48,5 +48,7 @@ export class KickService {
     }
 
     await this.chatParticipantRepository.remove(kicked);
+    chat.currentParticipant--;
+    await this.chatRepository.save(chat);
   }
 }

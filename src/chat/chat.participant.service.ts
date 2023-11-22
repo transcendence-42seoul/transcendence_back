@@ -11,6 +11,7 @@ import { ChatType } from './chat.entity';
 import { ChatParticipant } from './chat.participant.entity';
 import * as bcrypt from 'bcrypt';
 import { Role } from './chat.participant.entity';
+import { BanRepository } from './ban/ban.repository';
 
 @Injectable()
 export class ChatParticipantService {
@@ -19,6 +20,8 @@ export class ChatParticipantService {
     private chatRepository: ChatRepository,
     @InjectRepository(ChatParticipantRepository)
     private chatParticipantRepository: ChatParticipantRepository,
+    @InjectRepository(BanRepository)
+    private banRepository: BanRepository,
     @InjectRepository(UserRepository)
     private userRepository: UserRepository,
   ) {}
@@ -38,6 +41,22 @@ export class ChatParticipantService {
     if (chat.type !== ChatType.PRIVATE)
       throw new NotFoundException(`Chat with idx "${chatIdx}" is not private`);
 
+    // ban (check with chat)
+    const bannedParticipant = await this.banRepository.find({
+      where: { chat: { idx: chatIdx } },
+      relations: ['banned'],
+    });
+
+    const isBanned = bannedParticipant.some(
+      (ban) => ban.banned.idx === userIdx,
+    );
+    if (isBanned) {
+      throw new BadRequestException(
+        `User "${userIdx}" are banned in this chat`,
+      );
+    }
+
+    // block (check with blocker)
     const owner = await this.chatParticipantRepository.findOne({
       where: { chat: { idx: chatIdx }, role: Role.OWNER },
       relations: ['user'],
@@ -91,6 +110,22 @@ export class ChatParticipantService {
     if (chat.type !== ChatType.PUBLIC)
       throw new NotFoundException(`Chat with idx "${chatIdx}" is not public`);
 
+    // ban (check with chat)
+    const bannedParticipant = await this.banRepository.find({
+      where: { chat: { idx: chatIdx } },
+      relations: ['banned'],
+    });
+
+    const isBanned = bannedParticipant.some(
+      (ban) => ban.banned.idx === userIdx,
+    );
+    if (isBanned) {
+      throw new BadRequestException(
+        `User "${userIdx}" are banned in this chat`,
+      );
+    }
+
+    // block (check with blocker)
     const owner = await this.chatParticipantRepository.findOne({
       where: { chat: { idx: chatIdx }, role: Role.OWNER },
       relations: ['user'],

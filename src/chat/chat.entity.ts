@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { ChatMessage } from './chat.message.entity';
 import { ChatParticipant } from './chat.participant.entity';
+import { Ban } from './ban/ban.entity';
 
 export enum ChatType {
   PUBLIC = 'PUBLIC',
@@ -47,4 +48,9 @@ export class Chat extends BaseEntity {
     eager: true,
   })
   participants: ChatParticipant[];
+
+  @OneToMany(() => Ban, (ban) => ban.chat, {
+    eager: true,
+  })
+  banned: Ban[];
 }

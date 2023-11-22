@@ -6,6 +6,7 @@ import {
   Param,
   ParseIntPipe,
   Patch,
+  Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserDto } from './dto/user.dto';
@@ -17,12 +18,22 @@ export class UserController {
   constructor(private userService: UserService) {}
 
   /**
-   * deleteAll
+   * createTest, deleteAll
    * 테스트를 위한 메소드
    * 나중에 지울 것
    *
    * @auther : soopark
    */
+
+  @Post('/createTest')
+  async createTest() {
+    await this.userService.signup({
+      id: 'test',
+      nickname: 'test',
+      email: 'test',
+    });
+  }
+
   @Delete('/deleteAll')
   async deleteAll() {
     await this.userService.deleteAll();

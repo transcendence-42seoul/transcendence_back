@@ -12,6 +12,7 @@ import { ChatMessageService } from './chat.message.service';
 import { ChatMessageRepository } from './chat.message.repository';
 import { ChatMessage } from './chat.message.entity';
 import { ChatsGateway } from './chats.gateway';
+import { BanRepository } from './ban/ban.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Chat, ChatParticipant, ChatMessage])],
@@ -23,6 +24,7 @@ import { ChatsGateway } from './chats.gateway';
     ChatParticipantRepository,
     ChatMessageService,
     ChatMessageRepository,
+    BanRepository,
     UserRepository,
     ChatsGateway,
   ],
