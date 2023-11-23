@@ -11,7 +11,7 @@ import { ChatParticipantRepository } from './chat.participant.repository';
 import { ChatMessageService } from './chat.message.service';
 import { ChatMessageRepository } from './chat.message.repository';
 import { ChatMessage } from './chat.message.entity';
-import { ChatsGateway } from './chats.gateway';
+import { ChatGateway } from './chat.gateway';
 import { BanRepository } from './ban/ban.repository';
 import { MuteRepository } from './mute/mute.repository';
 
@@ -28,7 +28,7 @@ import { MuteRepository } from './mute/mute.repository';
     BanRepository,
     MuteRepository,
     UserRepository,
-    ChatsGateway,
+    ChatGateway,
   ],
 })
 export class ChatModule {}
