@@ -41,27 +41,6 @@ export class ChatParticipantService {
     if (chat.type !== ChatType.PRIVATE)
       throw new NotFoundException(`Chat with idx "${chatIdx}" is not private`);
 
-    // ban (check with chat)
-    const bannedParticipant = await this.banRepository.find({
-      where: { chat: { idx: chatIdx } },
-      relations: ['banned'],
-    });
-
-    const isBanned = bannedParticipant.some(
-      (ban) => ban.banned.idx === userIdx,
-    );
-    if (isBanned) {
-      throw new BadRequestException(
-        `User "${userIdx}" are banned in this chat`,
-      );
-    }
-
-    // block (check with blocker)
-    const owner = await this.chatParticipantRepository.findOne({
-      where: { chat: { idx: chatIdx }, role: Role.OWNER },
-      relations: ['user'],
-    });
-
     const participant = await this.chatParticipantRepository.findOne({
       where: { user: { idx: userIdx }, chat: { idx: chatIdx } },
     });
@@ -70,19 +49,10 @@ export class ChatParticipantService {
         `User with idx "${userIdx}" already joined chat with idx "${chatIdx}"`,
       );
 
-    const blockByOwner = owner.user.blocker;
-    for (let i = 0; i < blockByOwner.length; i++) {
-      if (blockByOwner[i].blocked === user.idx) {
-        throw new BadRequestException(`You are blocked by owner`);
-      }
-    }
-
-    const blockByParticipant = user.blocker;
-    for (let i = 0; i < blockByParticipant.length; i++) {
-      if (blockByParticipant[i].blocked === owner.user.idx) {
-        throw new BadRequestException(`You are blocked by participant`);
-      }
-    }
+    // ban (check with chat)
+    await this.checkBan(userIdx, chatIdx);
+    // block (check with blocker)
+    await this.checkBlock(userIdx, chatIdx);
 
     if (!(await bcrypt.compare(password, chat.password)))
       throw new NotFoundException(`Password is incorrect`);
@@ -172,5 +142,65 @@ export class ChatParticipantService {
       where: { chat: { idx: chatIdx } },
       relations: ['user'],
     });
+  }
+
+  async leaveChat(userIdx: number, chatIdx: number): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { idx: userIdx } });
+    if (!user)
+      throw new NotFoundException(`User with idx "${userIdx}" not found`);
+    const chat = await this.chatRepository.findOne({ where: { idx: chatIdx } });
+    if (!chat)
+      throw new NotFoundException(`Chat with idx "${chatIdx}" not found`);
+    const chatParticipant = await this.chatParticipantRepository.findOne({
+      where: { user: { idx: userIdx }, chat: { idx: chatIdx } },
+      relations: ['user'],
+    });
+    if (!chatParticipant)
+      throw new NotFoundException(
+        `Participant with idx "${userIdx}" not found in chat "${chatIdx}"`,
+      );
+
+    await this.chatParticipantRepository.remove(chatParticipant);
+    chat.currentParticipant--;
+    await this.chatRepository.save(chat);
+  }
+
+  async checkBan(chatIdx: number, userIdx: number): Promise<void> {
+    const bannedUsers = await this.banRepository.find({
+      where: { chat: { idx: chatIdx } },
+      relations: ['banned'],
+    });
+
+    const isBanned = bannedUsers.some((ban) => ban.banned.idx === userIdx);
+    if (isBanned) {
+      throw new BadRequestException(
+        `User "${userIdx}" are banned in this chat`,
+      );
+    }
+  }
+
+  async checkBlock(userIdx: number, chatIdx: number): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { idx: userIdx } });
+    if (!user)
+      throw new NotFoundException(`User with idx "${userIdx}" not found`);
+
+    const owner = await this.chatParticipantRepository.findOne({
+      where: { chat: { idx: chatIdx }, role: Role.OWNER },
+      relations: ['user'],
+    });
+
+    const blockByOwner = owner.user.blocker;
+    for (let i = 0; i < blockByOwner.length; i++) {
+      if (blockByOwner[i].blocked === user.idx) {
+        throw new BadRequestException(`You are blocked by owner`);
+      }
+    }
+
+    const blockByParticipant = user.blocker;
+    for (let i = 0; i < blockByParticipant.length; i++) {
+      if (blockByParticipant[i].blocked === owner.user.idx) {
+        throw new BadRequestException(`You are blocked by participant`);
+      }
+    }
   }
 }

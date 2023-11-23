@@ -7,12 +7,14 @@ import { BanRepository } from './ban.repository';
 import { ChatRepository } from '../chat.repository';
 import { ChatParticipantRepository } from '../chat.participant.repository';
 import { UserRepository } from 'src/user/user.repository';
+import { ChatParticipantService } from '../chat.participant.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Ban])],
   controllers: [BanController],
   providers: [
     BanService,
+    ChatParticipantService,
     BanRepository,
     ChatRepository,
     ChatParticipantRepository,

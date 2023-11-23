@@ -10,6 +10,7 @@ import { ChatParticipantRepository } from '../chat.participant.repository';
 import { Role } from '../chat.participant.entity';
 import { UserRepository } from 'src/user/user.repository';
 import { User } from 'src/user/user.entity';
+import { ChatParticipantService } from '../chat.participant.service';
 
 @Injectable()
 export class BanService {
@@ -22,6 +23,7 @@ export class BanService {
     private chatParticipantRepository: ChatParticipantRepository,
     @InjectRepository(UserRepository)
     private userRepository: UserRepository,
+    private chatParticipantService: ChatParticipantService,
   ) {}
 
   async banUser(
@@ -46,6 +48,7 @@ export class BanService {
     if (!banned) {
       throw new NotFoundException(`User with idx "${bannedIdx}" not found`);
     }
+
     // banner, banned가 해당 chatidx에 들어가있어야 함
     const bannerParticipant = await this.chatParticipantRepository.findOne({
       where: { user: { idx: bannerIdx }, chat: { idx: chatIdx } },
@@ -57,7 +60,6 @@ export class BanService {
     }
     const bannedParticipant = await this.chatParticipantRepository.findOne({
       where: { user: { idx: bannedIdx }, chat: { idx: chatIdx } },
-      relations: ['user'],
     });
     if (!bannedParticipant) {
       throw new NotFoundException(
@@ -92,15 +94,7 @@ export class BanService {
 
     await this.banRepository.createBan(chatIdx, bannedIdx);
 
-    await this.chatParticipantRepository.remove(bannedParticipant);
-    const updateChat = await this.chatRepository.findOne({
-      where: { idx: chatIdx },
-    });
-    if (!updateChat) {
-      throw new NotFoundException(`Chat with idx "${chatIdx}" not found`);
-    }
-    updateChat.currentParticipant--;
-    await this.chatRepository.save(updateChat);
+    await this.chatParticipantService.leaveChat(bannedIdx, chatIdx);
   }
 
   async deleteBan(

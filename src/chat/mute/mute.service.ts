@@ -125,7 +125,7 @@ export class MuteService {
     }
     if (ownerIdxs.includes(mutedIdx)) {
       throw new BadRequestException(
-        'You cannot delete mute yourself of this chat',
+        'You cannot delete mute owner of this chat',
       );
     }
 
