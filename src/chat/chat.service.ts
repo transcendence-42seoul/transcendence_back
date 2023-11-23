@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ChatRepository } from './chat.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from 'src/user/user.repository';
@@ -16,26 +20,32 @@ export class ChatService {
     private userRepository: UserRepository,
   ) {}
 
-  async createPrivate(idx: number, name: string, password: string) {
+  async createPrivate(
+    idx: number,
+    name: string,
+    password: string,
+    limit: number,
+  ) {
     if (!name) throw new NotFoundException('Name is required');
     if (!password) throw new NotFoundException('Password is required');
+    if (!limit) throw new NotFoundException('Limit is required');
 
     const user = await this.userRepository.findOne({ where: { idx } });
     if (!user) throw new NotFoundException(`User with idx "${idx}" not found`);
 
-    const chat = await this.chatRepository.createPrivate(name, password);
+    const chat = await this.chatRepository.createPrivate(name, password, limit);
     await this.chatParticipantRepository.createOwnerParticipant(chat, user);
 
     return chat;
   }
 
-  async createPublic(idx: number, name: string): Promise<Chat> {
+  async createPublic(idx: number, name: string, limit: number): Promise<Chat> {
     if (!name) throw new NotFoundException('Name is required');
 
     const user = await this.userRepository.findOne({ where: { idx } });
     if (!user) throw new NotFoundException(`User with idx "${idx}" not found`);
 
-    const chat = await this.chatRepository.createPublic(name);
+    const chat = await this.chatRepository.createPublic(name, limit);
     await this.chatParticipantRepository.createOwnerParticipant(chat, user);
     return chat;
   }
@@ -68,6 +78,20 @@ export class ChatService {
     if (!user2)
       throw new NotFoundException(`User with idx "${idx2}" not found`);
 
+    const blockByUser1 = user1.blocker;
+    for (let i = 0; i < blockByUser1.length; i++) {
+      if (blockByUser1[i].blocked === user2.idx) {
+        throw new BadRequestException(`You are blocked`);
+      }
+    }
+
+    const blockByUser2 = user2.blocker;
+    for (let i = 0; i < blockByUser2.length; i++) {
+      if (blockByUser2[i].blocked === user1.idx) {
+        throw new BadRequestException(`You are blocked`);
+      }
+    }
+
     const DMChat = await this.chatRepository
       .createQueryBuilder('chat')
       .innerJoin('chat.participants', 'participant')
@@ -80,7 +104,6 @@ export class ChatService {
       .having('COUNT(participant.user.idx) = 2')
       .getOne();
 
-    console.log(DMChat);
     if (DMChat) return DMChat;
 
     const participant1 =

@@ -16,6 +16,9 @@ export class ChatRepository extends Repository<Chat> {
   ): Promise<Chat> {
     const participants = [participant1, participant2];
     const chat = this.create({
+      name: 'DM',
+      limit: 2,
+      currentParticipant: 2,
       type: ChatType.DM,
       participants,
     });
@@ -23,22 +26,30 @@ export class ChatRepository extends Repository<Chat> {
     return chat;
   }
 
-  async createPrivate(name: string, password: string): Promise<Chat> {
+  async createPrivate(
+    name: string,
+    password: string,
+    limit: number,
+  ): Promise<Chat> {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const chat = this.create({
       name,
-      type: ChatType.PRIVATE,
       password: hashedPassword,
+      limit,
+      currentParticipant: 1,
+      type: ChatType.PRIVATE,
     });
     await this.save(chat);
     return chat;
   }
 
-  async createPublic(name: string): Promise<Chat> {
+  async createPublic(name: string, limit: number): Promise<Chat> {
     const chat = this.create({
       name,
+      limit,
+      currentParticipant: 1,
       type: ChatType.PUBLIC,
     });
     await this.save(chat);
