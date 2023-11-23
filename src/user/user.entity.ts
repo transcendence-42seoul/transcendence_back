@@ -1,5 +1,6 @@
 import { Avatar } from 'src/avatar/avatar.entity';
-import { Ban } from 'src/ban/ban.entity';
+import { Block } from 'src/block/block.entity';
+import { Ban } from 'src/chat/ban/ban.entity';
 import { FriendRequest } from 'src/friend/friend.request.entity';
 import { Ranking } from 'src/ranking/ranking.entity';
 import { Record } from 'src/record/record.entity';
@@ -10,11 +11,11 @@ import {
   BaseEntity,
   Column,
   Entity,
-  // JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Mute } from 'src/chat/mute/mute.entity';
 
 export enum UserStatus {
   ONLINE = 'ONLINE',
@@ -75,10 +76,20 @@ export class User extends BaseEntity {
   })
   requested: FriendRequest[];
 
-  @OneToMany(() => Ban, (ban) => ban.banner, {
+  @OneToMany(() => Block, (block) => block.blocker, {
     eager: true,
   })
-  banner: Ban[];
+  blocker: Block[];
+
+  @OneToMany(() => Ban, (ban) => ban.banned, {
+    eager: true,
+  })
+  banned: Ban[];
+
+  @OneToMany(() => Mute, (mute) => mute.muted, {
+    eager: true,
+  })
+  muted: Mute[];
 
   @OneToOne(() => Game, (game) => game.game_host, {
     eager: true,

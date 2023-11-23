@@ -8,6 +8,8 @@ import {
 } from 'typeorm';
 import { ChatMessage } from './chat.message.entity';
 import { ChatParticipant } from './chat.participant.entity';
+import { Ban } from './ban/ban.entity';
+import { Mute } from './mute/mute.entity';
 
 export enum ChatType {
   PUBLIC = 'PUBLIC',
@@ -20,8 +22,14 @@ export class Chat extends BaseEntity {
   @PrimaryGeneratedColumn()
   idx: number;
 
-  @Column({ nullable: true })
+  @Column({ nullable: false })
   name: string;
+
+  @Column({ nullable: false })
+  limit: number;
+
+  @Column({ nullable: false })
+  currentParticipant: number;
 
   @Column({ nullable: false })
   type: ChatType;
@@ -41,4 +49,14 @@ export class Chat extends BaseEntity {
     eager: true,
   })
   participants: ChatParticipant[];
+
+  @OneToMany(() => Ban, (ban) => ban.chat, {
+    eager: true,
+  })
+  banned: Ban[];
+
+  @OneToMany(() => Mute, (mute) => mute.chat, {
+    eager: true,
+  })
+  muted: Mute[];
 }

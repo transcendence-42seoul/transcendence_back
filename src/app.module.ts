@@ -11,8 +11,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeORMConfig } from './configs/typeorm.config';
 import { GameModule } from './game/game.module';
 import { FriendModule } from './friend/friend.module';
-import { BanModule } from './ban/ban.module';
+import { BlockModule } from './block/block.module';
 import { ChatModule } from './chat/chat.module';
+import { KickModule } from './chat/kick/kick.module';
+import { BanModule } from './chat/ban/ban.module';
+import { MuteModule } from './chat/mute/mute.module';
 
 @Module({
   imports: [
@@ -25,8 +28,11 @@ import { ChatModule } from './chat/chat.module';
     TypeOrmModule.forRoot(typeORMConfig),
     GameModule,
     FriendModule,
-    BanModule,
+    BlockModule,
     ChatModule,
+    KickModule,
+    BanModule,
+    MuteModule,
   ],
   controllers: [AppController],
   providers: [AppService],

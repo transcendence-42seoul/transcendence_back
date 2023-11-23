@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { ChatMessage } from './chat.message.entity';
-import { CreateMessageDto } from './dto/message.dto';
 
 @Injectable()
 export class ChatMessageRepository extends Repository<ChatMessage> {
@@ -10,15 +9,14 @@ export class ChatMessageRepository extends Repository<ChatMessage> {
   }
 
   async createChatMessage(
-    createMessageDto: CreateMessageDto,
+    chatIdx: number,
+    userIdx: number,
+    content: string,
   ): Promise<ChatMessage> {
-    const { content, user_idx, chat_idx, send_at } = createMessageDto;
-
     const message = this.create({
       content,
-      user: { idx: user_idx },
-      chat: { idx: chat_idx },
-      send_at,
+      user: { idx: userIdx },
+      chat: { idx: chatIdx },
     });
 
     await this.save(message);

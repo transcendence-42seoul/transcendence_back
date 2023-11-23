@@ -16,6 +16,7 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt/jwt.stretgy';
 import { ConfigModule } from '@nestjs/config';
+import { BlockRepository } from 'src/block/block.repository';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { ConfigModule } from '@nestjs/config';
     FriendRequestPairRepository,
     BanRepository,
     JwtStrategy,
+    BlockRepository,
   ],
   exports: [AuthService, JwtStrategy],
 })
