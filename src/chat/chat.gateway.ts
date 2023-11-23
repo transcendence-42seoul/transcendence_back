@@ -16,6 +16,7 @@ import { ChatMessageService } from './chat.message.service';
 import { ChatParticipant } from './chat.participant.entity';
 import { ChatType } from './chat.entity';
 import { ChatMessageDto } from './dto/chat.message.dto';
+import { AuthService } from 'src/auth/auth.service';
 
 @WebSocketGateway({ namespace: 'chats' })
 export class ChatGateway
@@ -23,6 +24,7 @@ export class ChatGateway
 {
   constructor(
     private readonly chatService: ChatService,
+    private readonly authService: AuthService,
     private readonly chatParticipantService: ChatParticipantService,
     private readonly chatMessageSerive: ChatMessageService,
   ) {}
@@ -42,8 +44,22 @@ export class ChatGateway
     }
   }
 
-  handleConnection(@ConnectedSocket() socket: Socket) {
-    this.logger.log('connected : ' + socket.id);
+  async handleConnection(@ConnectedSocket() socket: Socket) {
+    this.logger.log('disconnected : ' + socket.id);
+
+    const token = socket.handshake.query.token.toString();
+    if (token) {
+      try {
+        const decoded = await this.authService.validateToken(token);
+        socket.data.userIdx = decoded.user_idx;
+      } catch (error) {
+        this.logger.error('Invalid token:', error);
+        socket.disconnect();
+      }
+    } else {
+      this.logger.error('No token provided');
+      socket.disconnect();
+    }
   }
 
   afterInit() {
@@ -57,10 +73,11 @@ export class ChatGateway
   ) {
     // this.chatService.joinChatRoom(socket, body.room_id);
     // this.logger.log(socket.id + ' join in ' + body.room_id);
-
     const userIdx = socket.data.userIdx;
     const chatIdx = body.room_id;
     const password = body.password;
+
+    console.log('userIdx', userIdx);
 
     let participant: ChatParticipant;
 

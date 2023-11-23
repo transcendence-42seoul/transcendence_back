@@ -14,9 +14,15 @@ import { ChatMessage } from './chat.message.entity';
 import { ChatGateway } from './chat.gateway';
 import { BanRepository } from './ban/ban.repository';
 import { MuteRepository } from './mute/mute.repository';
+import { HttpModule } from '@nestjs/axios';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Chat, ChatParticipant, ChatMessage])],
+  imports: [
+    AuthModule,
+    HttpModule,
+    TypeOrmModule.forFeature([Chat, ChatParticipant, ChatMessage]),
+  ],
   controllers: [ChatController],
   providers: [
     ChatService,

@@ -11,12 +11,13 @@ import { RecordRepository } from 'src/record/record.repository';
 import { AvatarRepository } from 'src/avatar/avatar.repository';
 import { FriendRequestRepository } from 'src/friend/friend.request.repository';
 import { FriendRequestPairRepository } from 'src/friend/friend.request.pair.repository';
-import { BanRepository } from 'src/ban/ban.repository';
+import { BanRepository } from 'src/chat/ban/ban.repository';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt/jwt.stretgy';
 import { ConfigModule } from '@nestjs/config';
 import { BlockRepository } from 'src/block/block.repository';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -42,8 +43,9 @@ import { BlockRepository } from 'src/block/block.repository';
     FriendRequestPairRepository,
     BanRepository,
     JwtStrategy,
+    JwtService,
     BlockRepository,
   ],
-  exports: [AuthService, JwtStrategy],
+  exports: [AuthService, JwtStrategy, JwtService],
 })
 export class AuthModule {}

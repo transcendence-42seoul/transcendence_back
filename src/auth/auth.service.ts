@@ -7,6 +7,7 @@ import * as QRCode from 'qrcode';
 import { TFASecret } from 'src/user/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { LoginRequestDto } from './dto/login.request.dto';
+import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class AuthService {
@@ -102,6 +103,15 @@ export class AuthService {
     } catch (error) {
       console.log(error);
       return null;
+    }
+  }
+
+  async validateToken(token: string): Promise<any> {
+    try {
+      const decoded = jwt.verify(token, process.env.SECRET_KEY);
+      return decoded;
+    } catch (error) {
+      throw new Error('Invalid token');
     }
   }
 }
