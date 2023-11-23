@@ -4,7 +4,7 @@ import { Socket } from 'socket.io';
 import { UserRepository } from 'src/user/user.repository';
 import { GameRepository } from './game.repository';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User, UserStatus } from 'src/user/user.entity';
+import { UserStatus } from 'src/user/user.entity';
 import { CreateGameDto } from './dto/create.game.dto';
 import { RecordService } from 'src/record/record.service';
 import { Logger } from '@nestjs/common';
@@ -128,41 +128,16 @@ export class GameService {
     socket.leave(roomId);
   }
 
-  // 현재 user가 참가하고 있는 게임의 정보 얻기 -> 관전자도 사용해야하는 api(id 로 찾아야할듯...)
-  async getUserHostGameInfo(userIdx: number) {
-    const user = await this.userRepository.findOne({
-      where: { idx: userIdx },
+  async getUserGame(userIdx: number) {
+    const game = await this.gameRepository.findOne({
+      where: [
+        { game_host: { idx: userIdx } },
+        { game_guest: { idx: userIdx } },
+      ],
+      relations: ['game_host', 'game_guest'],
     });
-    /**
-     * user{
-     *  current_game =>
-     * }
-     *
-     * game {
-     *  game_host =>
-     *  game_guest =>
-     * }
-     *
-     */
-
-    // seokchoi =>
-    // sangehan =>
-    // const gameList = user.host;
-    // let game = await this.gameRepository.findOne({
-    //   where: { game_host: user.host, game_status: true },
-    // });
-    // if (!game) {
-    //   game = await this.gameRepository.findOne({
-    //     where: { game_guest: user.host, game_status: true },
-    //   });
-    // }
-
-    return user.host;
-    // return user.current_game;
-    // return user.current_game;
-    // 아직 user에 current game 저장을 어떻게 할지 몰라서 진행을 못함.
-    // const user = await this.userRepository.findOne({ where: { idx: userIdx } });
-    // return this.gameRepository.getUserCurrentGameInfo(userIdx);
+    if (game) return game;
+    else throw Error('user가 존재하지 않습니다.');
   }
 
   async getUserGuestGameInfo(userId: string) {
