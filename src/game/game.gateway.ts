@@ -17,7 +17,7 @@ import { CGame, DIRECTION } from './game.engine';
 import { GameMode, GameModeType } from './entities/game.entity';
 import { UserRepository } from 'src/user/user.repository';
 
-// import { GameModeType, GameMode } from './entities/game.entity';
+const COUNT_DOWN_TIME = 5;
 
 type GameStoreType = {
   [key: string]: CGame;
@@ -27,6 +27,8 @@ const GameStore: GameStoreType = {};
 
 const NormalWaitingQueue = [];
 const HardWaitingQueue = [];
+
+// const countDownInterval = {};
 
 interface LadderWaitingQueueType {
   mode: 'normal' | 'hard';
@@ -202,6 +204,18 @@ export class GameGateway
       guestData.socket.emit('createGameSuccess', game);
       hostData.socket.join(game.room_id);
       guestData.socket.join(game.room_id);
+
+      let count = COUNT_DOWN_TIME;
+      const countDownInterval = setInterval(() => {
+        // this.server.to(game.room_id).emit('countDown', count);
+        hostData.socket.emit('countDown', count);
+        guestData.socket.emit('countDown', count);
+
+        count--;
+        if (count === 0) {
+          clearInterval(countDownInterval);
+        }
+      }, 1000);
       this.logger.log(
         `create game ${hostData.idx}, ${guestData.idx}} in ${game.room_id}`,
       );
