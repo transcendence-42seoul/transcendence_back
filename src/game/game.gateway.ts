@@ -30,8 +30,6 @@ const GameStore: GameStoreType = {};
 const NormalWaitingQueue = [];
 const HardWaitingQueue = [];
 
-// const countDownInterval = {};
-
 interface LadderWaitingQueueType {
   mode: 'normal' | 'hard';
   token: string;
@@ -92,7 +90,6 @@ export class GameGateway
     const token = socket.handshake.query.token;
     let temp;
     try {
-      // token 유효성 검사
       const data = this.authService.parsingJwtData(token as string);
       temp = data;
       if (!data) {
@@ -224,6 +221,7 @@ export class GameGateway
         this.server.to(game.room_id).emit('countDown', count);
         if (count === 0) {
           clearInterval(countDownInterval);
+          this.start(game.room_id);
           this.userService.updateStatus(hostData.idx, UserStatus.PLAYING);
         }
       }, 1000);
@@ -232,6 +230,39 @@ export class GameGateway
       );
     } catch (error) {
       throw Error("can't create game");
+    }
+  }
+
+  start(roomId: string) {
+    if (roomId in GameStore) {
+      return;
+    }
+    this.logger.log(`${roomId} game start!`);
+    GameStore[roomId] = new CGame();
+    this.server.emit('gameData', GameStore[roomId]);
+
+    GameStore[roomId].intervalId = setInterval(
+      () => this.update(roomId),
+      1000 / 60,
+    );
+  }
+
+  update(roomId: string) {
+    GameStore[roomId].update();
+    if (GameStore[roomId].over === true) {
+      this.server.emit('endGame');
+      if (GameStore[roomId].intervalId) {
+        clearInterval(GameStore[roomId].intervalId);
+        GameStore[roomId].intervalId = null;
+      }
+      const winner =
+        GameStore[roomId].host.score > GameStore[roomId].guest.score
+          ? 'host'
+          : 'guest';
+      this.gameService.finishGame(roomId, winner);
+      delete GameStore[roomId];
+    } else {
+      this.server.emit('getGameData', GameStore[roomId].getGameData());
     }
   }
 
@@ -249,53 +280,7 @@ export class GameGateway
     @ConnectedSocket() socket: Socket,
   ) {
     this.gameService.joinGameRoom(socket, body.room_id);
-    this.logger.log(socket.id + ' join in ' + body.room_id);
-  }
-
-  updateGame(roomId: string, socket: Socket) {
-    GameStore[roomId].update();
-    if (GameStore[roomId].over === true) {
-      socket.emit('endGame');
-      socket.to(roomId).emit('endGame');
-      if (GameStore[roomId].intervalId) {
-        clearInterval(GameStore[roomId].intervalId);
-        GameStore[roomId].intervalId = null;
-      }
-      this.gameService.finishGame(roomId);
-      delete GameStore[roomId];
-      console.log(GameStore);
-    } else {
-      socket.emit('getGameData', GameStore[roomId].getGameData());
-      socket.to(roomId).emit('getGameData', GameStore[roomId].getGameData());
-    }
-  }
-
-  @SubscribeMessage('startGame')
-  startGame(
-    @MessageBody() body: JoinRoomDto,
-    @ConnectedSocket() socket: Socket,
-  ) {
-    if ([...socket.rooms.values()].length < 2) {
-      return;
-    }
-
-    const roomId = [...socket.rooms.values()][1];
-    if (roomId === undefined) {
-      this.logger.log('roomId is undefined');
-      return;
-    }
-    if (roomId in GameStore) {
-      return;
-    }
-    this.logger.log(`${roomId} game start!`);
-    GameStore[roomId] = new CGame();
-    socket.emit('gameData', GameStore[roomId]);
-    socket.to(roomId).emit('gameData', GameStore[roomId]);
-
-    GameStore[roomId].intervalId = setInterval(
-      () => this.updateGame(roomId, socket),
-      1000 / 60,
-    );
+    this.logger.log(socket.id + ' joi n  in ' + body.room_id);
   }
 
   @SubscribeMessage('keyEvent')

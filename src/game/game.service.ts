@@ -9,6 +9,7 @@ import { UserStatus } from 'src/user/user.entity';
 import { CreateGameDto } from './dto/create.game.dto';
 import { RecordService } from 'src/record/record.service';
 import { Logger } from '@nestjs/common';
+import { RankingService } from 'src/ranking/ranking.service';
 
 @Injectable()
 export class GameService {
@@ -16,11 +17,12 @@ export class GameService {
     @InjectRepository(GameRepository)
     private gameRepository: GameRepository,
     @InjectRepository(UserRepository)
-    private userRepository: UserRepository,
+    private readonly userRepository: UserRepository,
     private readonly recordService: RecordService,
-    private userService: UserService,
+    private readonly userService: UserService,
+    private readonly rankingService: RankingService,
   ) {}
-  private logger = new Logger('chat'); // 테스트용 다쓰면 지워도 됨.
+  private logger = new Logger('chat');
 
   async createGame(body: CreateGameDto) {
     const game = await this.gameRepository.createGame(
@@ -31,64 +33,54 @@ export class GameService {
     return game;
   }
 
-  async finishGame(roomId: string) {
+  async finishGame(roomId: string, winner: 'host' | 'guest') {
     const game = await this.gameRepository.findOne({
       where: { room_id: roomId },
     });
     const gameHost = await game.game_host;
     const gameGuest = await game.game_guest;
-    const winner =
-      game.gameHost_score > game.gameGuest_score ? gameHost : gameGuest;
+    const gameWinner = winner === 'host' ? gameHost : gameGuest;
     gameHost.record.total_game += 1;
     gameGuest.record.total_game += 1;
-    winner.record.total_win += 1;
-    if (game.game_mode >= 2) {
+    gameWinner.record.total_win += 1;
+
+    if (game.game_mode <= 2) {
       gameHost.record.ladder_game += 1;
       gameGuest.record.ladder_game += 1;
-      winner.record.ladder_win += 1;
+      gameWinner.record.ladder_win += 1;
+      gameHost.ranking.score -= 20;
+      gameGuest.ranking.score -= 20;
+      gameWinner.ranking.score += 40;
+      try {
+        await this.rankingService.updateRankingScore(
+          gameHost.idx,
+          gameHost.ranking.score,
+        );
+        await this.rankingService.updateRankingScore(
+          gameGuest.idx,
+          gameGuest.ranking.score,
+        );
+      } catch (error) {
+        this.logger.error(error);
+      }
     } else {
       gameHost.record.general_game += 1;
       gameGuest.record.general_game += 1;
-      winner.record.general_win += 1;
+      gameWinner.record.general_win += 1;
     }
     game.game_status = false;
 
     try {
       await this.recordService.updateRecord(gameHost.idx, gameHost.record);
       await this.recordService.updateRecord(gameGuest.idx, gameGuest.record);
-      console.log('host idx : ' + gameHost.idx);
-      console.log('guest idx  : ' + gameGuest.idx);
       await this.userService.updateStatus(gameHost.idx, UserStatus.ONLINE);
       await this.userService.updateStatus(gameGuest.idx, UserStatus.ONLINE);
     } catch (error) {
-      console.log(error);
+      this.logger.error(error);
     }
     const finish = await this.gameRepository.delete(game.idx);
-    console.log('@@@@@@@@@@@@@finish@@@@@@@@@@@@@@@');
     return finish;
   }
-  //abnormal game 다시 수정해야함
-  async abnormalGame(gameIdx: number) {
-    const game = await this.gameRepository.findOne({ where: { idx: gameIdx } });
-    const connectUser =
-      game.game_host.status === UserStatus.ONLINE
-        ? game.game_host
-        : game.game_guest;
-    connectUser.record.total_game += 1;
-    connectUser.record.total_win += 1;
-    if (game.game_mode >= 2) {
-      connectUser.record.ladder_game += 1;
-      connectUser.record.ladder_win += 1;
-    } else {
-      connectUser.record.general_game += 1;
-      connectUser.record.general_win += 1;
-    }
-    connectUser.status = UserStatus.ONLINE;
-    const finish = await this.gameRepository.delete(gameIdx);
-    return finish;
-  }
-
-  // 점수 업데이트, 유저 상태 변화(offline 상태 변화는 client팀과 같이 [home gateway]), 탈주 처리(비정상 종료)
 
   async updateGameResult(
     gameIdx: number,

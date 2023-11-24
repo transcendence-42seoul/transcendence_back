@@ -45,6 +45,19 @@ export class RankingService {
     return higherScoreCount;
   }
 
+  async updateRankingScore(idx: number, score: number): Promise<Ranking> {
+    const user = await this.userRepository.findOne({ where: { idx } });
+    if (!user) throw new NotFoundException(`User with idx "${idx}" not found`);
+
+    const ranking = user.ranking;
+    if (!ranking)
+      throw new NotFoundException(`Ranking with idx "${idx}" not found`);
+
+    ranking.score = score;
+    await this.rankingRepository.save(ranking);
+    return ranking;
+  }
+
   async getAllRank(): Promise<Ranking[]> {
     return await this.rankingRepository
       .createQueryBuilder('ranking')

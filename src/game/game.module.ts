@@ -8,12 +8,14 @@ import { RecordModule } from 'src/record/record.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Game } from './entities/game.entity';
+import { RankingModule } from 'src/ranking/ranking.module';
 
 @Module({
   imports: [
     UserModule,
     RecordModule,
     AuthModule,
+    RankingModule,
     TypeOrmModule.forFeature([Game]),
   ],
   providers: [GameGateway, GameService, GameRepository],
