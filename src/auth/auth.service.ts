@@ -93,7 +93,7 @@ export class AuthService {
   async jwtLogin(data: LoginRequestDto) {
     const { id, user_idx } = data;
     const payload = { id, user_idx };
-    return this.jwtService.sign(payload);
+    return this.jwtService.sign(payload, { secret: process.env.SECRET_KEY });
   }
 
   parsingJwtData(token: string) {

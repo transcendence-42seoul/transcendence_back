@@ -41,6 +41,7 @@ export class ChatService {
   }
 
   async createPublic(idx: number, name: string, limit: number): Promise<Chat> {
+    console.log(idx, name, limit);
     if (!name) throw new NotFoundException('Name is required');
 
     const user = await this.userRepository.findOne({ where: { idx } });

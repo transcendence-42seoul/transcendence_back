@@ -17,6 +17,7 @@ import { ChatParticipant } from './chat.participant.entity';
 import { ChatType } from './chat.entity';
 import { ChatMessageDto } from './dto/chat.message.dto';
 import { AuthService } from 'src/auth/auth.service';
+import CreateChatDto from './dto/chat.create.dto';
 
 @WebSocketGateway({ namespace: 'chats' })
 export class ChatGateway
@@ -28,7 +29,7 @@ export class ChatGateway
     private readonly chatParticipantService: ChatParticipantService,
     private readonly chatMessageSerive: ChatMessageService,
   ) {}
-  private logger = new Logger('chat'); // 테스트용 다쓰면 지워도 됨.
+  private logger = new Logger('chats'); // 테스트용 다쓰면 지워도 됨.
 
   handleDisconnect(@ConnectedSocket() socket: Socket) {
     this.logger.log('disconnected : ' + socket.id);
@@ -45,12 +46,12 @@ export class ChatGateway
   }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
-    this.logger.log('disconnected : ' + socket.id);
+    this.logger.log('connected : ' + socket.id);
 
-    const token = socket.handshake.query.token.toString();
+    const token = socket.handshake.query.token;
     if (token) {
       try {
-        const decoded = await this.authService.validateToken(token);
+        const decoded = await this.authService.validateToken(token.toString());
         socket.data.userIdx = decoded.user_idx;
       } catch (error) {
         this.logger.error('Invalid token:', error);
@@ -66,18 +67,42 @@ export class ChatGateway
     this.logger.log('init');
   }
 
+  @SubscribeMessage('createChat')
+  async createChat(
+    @MessageBody() body: CreateChatDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const userIdx = socket.data.userIdx;
+    const name = body.title;
+    const password = body.password;
+    const limit = parseInt(body.maxPeople, 10);
+
+    try {
+      if (password === '') {
+        const chat = await this.chatService.createPublic(userIdx, name, limit);
+        return { status: 'success', chat: chat };
+      } else {
+        const chat = await this.chatService.createPrivate(
+          userIdx,
+          name,
+          password,
+          limit,
+        );
+        return { status: 'success', chat: chat };
+      }
+    } catch (error) {
+      return { status: 'error', message: error.message };
+    }
+  }
+
   @SubscribeMessage('joinChat')
   async joinChat(
     @MessageBody() body: JoinChatDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    // this.chatService.joinChatRoom(socket, body.room_id);
-    // this.logger.log(socket.id + ' join in ' + body.room_id);
     const userIdx = socket.data.userIdx;
     const chatIdx = body.room_id;
     const password = body.password;
-
-    console.log('userIdx', userIdx);
 
     let participant: ChatParticipant;
 
