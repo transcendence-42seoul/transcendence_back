@@ -1,3 +1,4 @@
+import { UserService } from './../user/user.service';
 import { Injectable } from '@nestjs/common';
 // import { v4 as uuidv4 } from 'uuid';
 import { Socket } from 'socket.io';
@@ -17,6 +18,7 @@ export class GameService {
     @InjectRepository(UserRepository)
     private userRepository: UserRepository,
     private readonly recordService: RecordService,
+    private userService: UserService,
   ) {}
   private logger = new Logger('chat'); // 테스트용 다쓰면 지워도 됨.
 
@@ -29,10 +31,9 @@ export class GameService {
     return game;
   }
 
-  async finishGame(gameIdx: number) {
-    //gameIdx가 존재하는 애인지 확인하는 로직 추가해야하나?
+  async finishGame(roomId: string) {
     const game = await this.gameRepository.findOne({
-      where: { idx: gameIdx },
+      where: { room_id: roomId },
     });
     const gameHost = await game.game_host;
     const gameGuest = await game.game_guest;
@@ -50,17 +51,20 @@ export class GameService {
       gameGuest.record.general_game += 1;
       winner.record.general_win += 1;
     }
-    gameHost.status = UserStatus.ONLINE;
-    gameGuest.status = UserStatus.ONLINE;
     game.game_status = false;
 
     try {
       await this.recordService.updateRecord(gameHost.idx, gameHost.record);
       await this.recordService.updateRecord(gameGuest.idx, gameGuest.record);
+      console.log('host idx : ' + gameHost.idx);
+      console.log('guest idx  : ' + gameGuest.idx);
+      await this.userService.updateStatus(gameHost.idx, UserStatus.ONLINE);
+      await this.userService.updateStatus(gameGuest.idx, UserStatus.ONLINE);
     } catch (error) {
       console.log(error);
     }
-    const finish = await this.gameRepository.delete(gameIdx);
+    const finish = await this.gameRepository.delete(game.idx);
+    console.log('@@@@@@@@@@@@@finish@@@@@@@@@@@@@@@');
     return finish;
   }
   //abnormal game 다시 수정해야함
@@ -109,16 +113,6 @@ export class GameService {
         : UserStatus.ONLINE;
     await this.userRepository.update(userIdx, { status: newStatus });
   }
-  //finish game 구현 시 game_status > false로 변경
-
-  // game 요청
-
-  // game 수락
-  async acceptBattle() {}
-
-  // findGameRoomIdOfUser(userId: string) {
-  //   return 'This action returns game room id of user';
-  // }
 
   joinGameRoom(socket: Socket, roomId: string) {
     socket.join(roomId);
@@ -137,7 +131,7 @@ export class GameService {
       relations: ['game_host', 'game_guest'],
     });
     if (game) return game;
-    else throw Error('user가 존재하지 않습니다.');
+    return null;
   }
 
   async getUserGuestGameInfo(userId: string) {
