@@ -1,49 +1,102 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ChatRepository } from './chat.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from 'src/user/user.repository';
 import { ChatMessage } from './chat.message.entity';
-import { CreateMessageDto } from './dto/message.dto';
 import { ChatMessageRepository } from './chat.message.repository';
+import { Not, In } from 'typeorm';
+import { MuteRepository } from './mute/mute.repository';
+import { ChatParticipantRepository } from './chat.participant.repository';
 
 @Injectable()
 export class ChatMessageService {
   constructor(
     @InjectRepository(ChatRepository)
     private chatRepository: ChatRepository,
+    @InjectRepository(ChatParticipantRepository)
+    private chatParticipantRepository: ChatParticipantRepository,
     @InjectRepository(ChatMessageRepository)
     private chatMessageRepository: ChatMessageRepository,
+    @InjectRepository(MuteRepository)
+    private muteRepository: MuteRepository,
     @InjectRepository(UserRepository)
     private userRepository: UserRepository,
   ) {}
 
   async createChatMessage(
-    createMessageDto: CreateMessageDto,
+    chatIdx: number,
+    userIdx: number,
+    content: string,
   ): Promise<ChatMessage> {
-    return this.chatMessageRepository.createChatMessage(createMessageDto);
-  }
-
-  async getChatMessages(chatIdx: number): Promise<CreateMessageDto[]> {
     const chat = await this.chatRepository.findOne({ where: { idx: chatIdx } });
     if (!chat) {
-      throw new Error('채팅방이 존재하지 않습니다.');
+      throw new NotFoundException(`Chat with idx "${chatIdx}" not found`);
+    }
+    const user = await this.userRepository.findOne({ where: { idx: userIdx } });
+    if (!user)
+      throw new NotFoundException(`User with idx "${userIdx}" not found`);
+
+    // user가 해당 chatidx에 들어가있어야 함
+    const userParticipant = await this.chatParticipantRepository.findOne({
+      where: { user: { idx: userIdx }, chat: { idx: chatIdx } },
+    });
+    if (!userParticipant) {
+      throw new NotFoundException(
+        `Participant with idx "${userIdx}" not found in chat "${chatIdx}"`,
+      );
     }
 
-    const messages = chat.messages;
-    const messageDtos: CreateMessageDto[] = [];
-    for (const message of messages) {
-      const messageData = message;
+    const muteList = await this.muteRepository.find({
+      where: { chat: { idx: chatIdx } },
+      relations: ['muted'],
+    });
 
-      const user = await this.userRepository.findOne({
-        where: { idx: message.user.idx },
-      });
-      if (!user) messageData.user = undefined;
-
-      const messageDto = CreateMessageDto.convertDto(message);
-
-      messageDtos.push(messageDto);
+    const now = new Date();
+    if (muteList) {
+      for (const mute of muteList) {
+        console.log('mute:', mute);
+        if (mute.muted.idx === userIdx && mute.unmute_timestamp > now) {
+          throw new BadRequestException(
+            `User with idx "${userIdx}" is muted in chat "${chatIdx}"`,
+          );
+        }
+      }
     }
 
-    return messageDtos;
+    return this.chatMessageRepository.createChatMessage(
+      chatIdx,
+      userIdx,
+      content,
+    );
+  }
+
+  async getChatMessages(
+    chatIdx: number,
+    userIdx: number,
+  ): Promise<ChatMessage[]> {
+    const chat = await this.chatRepository.findOne({ where: { idx: chatIdx } });
+    if (!chat) {
+      throw new NotFoundException(`Chat with idx "${chatIdx}" not found`);
+    }
+    const user = await this.userRepository.findOne({ where: { idx: userIdx } });
+    if (!user) {
+      throw new NotFoundException(`User with idx "${userIdx}" not found`);
+    }
+
+    const blockedUsers = user.blocker;
+
+    const chatMessages = await this.chatMessageRepository.find({
+      where: {
+        chat: { idx: chatIdx },
+        user: { idx: Not(In(blockedUsers.map((bu) => bu.blocked))) },
+      },
+      relations: ['user'],
+    });
+
+    return chatMessages;
   }
 }

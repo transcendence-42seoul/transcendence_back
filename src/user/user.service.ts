@@ -12,7 +12,7 @@ import {
 import { TFASecret, User, UserStatus } from './user.entity';
 import { FriendRequestPairRepository } from 'src/friend/friend.request.pair.repository';
 import { FriendRequestRepository } from 'src/friend/friend.request.repository';
-import { BanRepository } from 'src/ban/ban.repository';
+import { BlockRepository } from 'src/block/block.repository';
 
 @Injectable()
 export class UserService {
@@ -29,8 +29,8 @@ export class UserService {
     private friendRequestRepository: FriendRequestRepository,
     @InjectRepository(FriendRequestPairRepository)
     private friendRequestPairRepository: FriendRequestPairRepository,
-    @InjectRepository(BanRepository)
-    private banRepository: BanRepository,
+    @InjectRepository(BlockRepository)
+    private blockRepository: BlockRepository,
   ) {}
 
   async findOrCreateUser(userData: any): Promise<User> {

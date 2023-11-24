@@ -11,8 +11,8 @@ import { ChatService } from './chat.service';
 import { Chat } from './chat.entity';
 import { ChatParticipant } from './chat.participant.entity';
 import { ChatParticipantService } from './chat.participant.service';
-import { CreateMessageDto } from './dto/message.dto';
 import { ChatMessageService } from './chat.message.service';
+import { ChatMessage } from './chat.message.entity';
 
 @Controller('chats')
 export class ChatController {
@@ -27,16 +27,18 @@ export class ChatController {
     @Param('idx', ParseIntPipe) idx: number,
     @Body('name') name: string,
     @Body('password') password: string,
+    @Body('limit', ParseIntPipe) limit: number,
   ): Promise<Chat> {
-    return await this.chatService.createPrivate(idx, name, password);
+    return await this.chatService.createPrivate(idx, name, password, limit);
   }
 
   @Post('/public/:idx')
   async createPublic(
     @Param('idx', ParseIntPipe) idx: number,
     @Body('name') name: string,
+    @Body('limit', ParseIntPipe) limit: number,
   ): Promise<Chat> {
-    return await this.chatService.createPublic(idx, name);
+    return await this.chatService.createPublic(idx, name, limit);
   }
 
   @Post('/dm/:idx1/:idx2')
@@ -83,15 +85,32 @@ export class ChatController {
     return await this.chatParticipantService.joinPublicChat(userIdx, chatIdx);
   }
 
+  @Get('/participants/:chatIdx')
+  async getChatParticipants(
+    @Param('chatIdx') chatIdx: number,
+  ): Promise<ChatParticipant[]> {
+    return await this.chatParticipantService.getChatParticipants(chatIdx);
+  }
+
   @Delete('/:idx')
   async deleteChat(@Param('idx', ParseIntPipe) idx: number): Promise<void> {
     await this.chatService.deleteChat(idx);
   }
 
-  @Get('/message/:chatIdx')
+  @Get('/message/:chatIdx/:userIdx')
   async getChatMessages(
     @Param('chatIdx', ParseIntPipe) chatIdx: number,
-  ): Promise<CreateMessageDto[]> {
-    return await this.chatMessageService.getChatMessages(chatIdx);
+    @Param('userIdx', ParseIntPipe) userIdx: number,
+  ): Promise<ChatMessage[]> {
+    return await this.chatMessageService.getChatMessages(chatIdx, userIdx);
+  }
+
+  @Post('/message/:chatIdx/:userIdx')
+  async createChatMessage(
+    @Param('chatIdx', ParseIntPipe) chatIdx: number,
+    @Param('userIdx', ParseIntPipe) userIdx: number,
+    @Body('content') content: string,
+  ): Promise<ChatMessage> {
+    return this.chatMessageService.createChatMessage(chatIdx, userIdx, content);
   }
 }

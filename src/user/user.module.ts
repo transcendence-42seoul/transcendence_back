@@ -7,7 +7,8 @@ import { RankingRepository } from '../ranking/ranking.repository';
 import { RecordRepository } from '../record/record.repository';
 import { FriendRequestRepository } from 'src/friend/friend.request.repository';
 import { FriendRequestPairRepository } from 'src/friend/friend.request.pair.repository';
-import { BanRepository } from 'src/ban/ban.repository';
+import { BlockRepository } from 'src/block/block.repository';
+
 @Module({
   controllers: [UserController],
   providers: [
@@ -18,7 +19,7 @@ import { BanRepository } from 'src/ban/ban.repository';
     RecordRepository,
     FriendRequestRepository,
     FriendRequestPairRepository,
-    BanRepository,
+    BlockRepository,
   ],
   exports: [UserService, UserRepository],
 })
