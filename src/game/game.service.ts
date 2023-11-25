@@ -60,8 +60,6 @@ export class GameService {
           gameGuest.idx,
           gameGuest.ranking.score,
         );
-        console.log('gameHost.ranking.score : ', gameHost.ranking.score);
-        console.log('gameGuest.ranking.score : ', gameGuest.ranking.score);
       } catch (error) {
         this.logger.error(error);
       }

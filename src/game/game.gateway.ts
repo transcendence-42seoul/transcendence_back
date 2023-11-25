@@ -96,7 +96,6 @@ export class GameGateway
         throw new UnauthorizedException('Unauthorized access');
       }
     } catch (error) {
-      console.log('connetion error');
       socket.emit('error', error.message);
       socket.disconnect();
     }
@@ -160,7 +159,6 @@ export class GameGateway
     } catch (error) {
       socket.emit('error', error.message);
     }
-    console.log(NormalWaitingQueue);
   }
   @SubscribeMessage('cancelLadderQueue')
   cancelLadderQueue(
