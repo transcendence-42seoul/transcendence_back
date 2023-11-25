@@ -1,3 +1,4 @@
+import { UserService } from './../user/user.service';
 import { AuthService } from 'src/auth/auth.service';
 import {
   WebSocketGateway,
@@ -7,6 +8,7 @@ import {
   OnGatewayInit,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  WebSocketServer,
 } from '@nestjs/websockets';
 import { GameService } from './game.service';
 import { Logger, UnauthorizedException } from '@nestjs/common';
@@ -15,7 +17,7 @@ import { JoinRoomDto } from './dto/join.room.dto';
 import { KyeEvent, KyeEventDto } from './dto/key.event.dto';
 import { CGame, DIRECTION } from './game.engine';
 import { GameMode, GameModeType } from './entities/game.entity';
-import { UserRepository } from 'src/user/user.repository';
+import { UserStatus } from 'src/user/user.entity';
 
 const COUNT_DOWN_TIME = 5;
 
@@ -28,8 +30,6 @@ const GameStore: GameStoreType = {};
 const NormalWaitingQueue = [];
 const HardWaitingQueue = [];
 
-// const countDownInterval = {};
-
 interface LadderWaitingQueueType {
   mode: 'normal' | 'hard';
   token: string;
@@ -39,13 +39,13 @@ interface LadderWaitingQueueType {
 export class GameGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
+  @WebSocketServer() server: Server;
   constructor(
     private readonly gameService: GameService,
     private readonly authService: AuthService,
-    private readonly userRepository: UserRepository,
+    private readonly userService: UserService,
   ) {}
   private logger = new Logger('games');
-  private server = new Server();
 
   clearSocketInAllQueue(socket: Socket) {
     const normalIndex = NormalWaitingQueue.findIndex((element) => {
@@ -62,9 +62,22 @@ export class GameGateway
     }
   }
 
-  // 1. queue에서 다 나가야함. []
-  // 2. room에서 다 나가야함. []
   handleDisconnect(@ConnectedSocket() socket: Socket) {
+    // queue에서 나가기
+    let index = NormalWaitingQueue.findIndex((element) => {
+      return element[0] === socket;
+    });
+    if (index > -1) {
+      NormalWaitingQueue.splice(index, 1);
+    }
+    index = HardWaitingQueue.findIndex((element) => {
+      return element[0] === socket;
+    });
+    if (index > -1) {
+      HardWaitingQueue.splice(index, 1);
+    }
+
+    // room에서 나가기 => 자동으로 되는 듯
     this.logger.log('disconnected : ' + socket.id);
     if ([...socket.rooms.values()].length < 2) return;
     const roomId = [...socket.rooms.values()][1];
@@ -77,27 +90,22 @@ export class GameGateway
     const token = socket.handshake.query.token;
     let temp;
     try {
-      // token 유효성 검사
       const data = this.authService.parsingJwtData(token as string);
-
       temp = data;
       if (!data) {
         throw new UnauthorizedException('Unauthorized access');
       }
     } catch (error) {
+      console.log('connetion error');
       socket.emit('error', error.message);
       socket.disconnect();
     }
 
-    try {
-      const game = await this.gameService.getUserGame(temp.user_idx);
-      if (game) {
-        socket.join(game.room_id);
-      }
-      if (game) this.logger.log('connected : ' + socket.id);
-    } catch (error) {
-      console.log(error);
+    const game = await this.gameService.getUserGame(temp.user_idx);
+    if (game) {
+      socket.join(game.room_id);
     }
+    if (game) this.logger.log('connected : ' + socket.id);
   }
 
   afterInit() {
@@ -152,6 +160,7 @@ export class GameGateway
     } catch (error) {
       socket.emit('error', error.message);
     }
+    console.log(NormalWaitingQueue);
   }
   @SubscribeMessage('cancelLadderQueue')
   cancelLadderQueue(
@@ -173,7 +182,7 @@ export class GameGateway
         HardWaitingQueue.splice(index, 1);
       }
     }
-    this.logger.log(socket.id + ' cancel waiting ladder queue ');
+    this.logger.log(socket.id + ' cancel waiting  ladder queue');
   }
 
   async createMatch(
@@ -206,14 +215,14 @@ export class GameGateway
       guestData.socket.join(game.room_id);
 
       let count = COUNT_DOWN_TIME;
+      this.server.to(game.room_id).emit('countDown', count);
       const countDownInterval = setInterval(() => {
-        // this.server.to(game.room_id).emit('countDown', count);
-        hostData.socket.emit('countDown', count);
-        guestData.socket.emit('countDown', count);
-
         count--;
+        this.server.to(game.room_id).emit('countDown', count);
         if (count === 0) {
           clearInterval(countDownInterval);
+          this.start(game.room_id);
+          this.userService.updateStatus(hostData.idx, UserStatus.PLAYING);
         }
       }, 1000);
       this.logger.log(
@@ -221,6 +230,39 @@ export class GameGateway
       );
     } catch (error) {
       throw Error("can't create game");
+    }
+  }
+
+  start(roomId: string) {
+    if (roomId in GameStore) {
+      return;
+    }
+    this.logger.log(`${roomId} game start!`);
+    GameStore[roomId] = new CGame();
+    this.server.emit('gameData', GameStore[roomId]);
+
+    GameStore[roomId].intervalId = setInterval(
+      () => this.update(roomId),
+      1000 / 60,
+    );
+  }
+
+  update(roomId: string) {
+    GameStore[roomId].update();
+    if (GameStore[roomId].over === true) {
+      this.server.emit('endGame');
+      if (GameStore[roomId].intervalId) {
+        clearInterval(GameStore[roomId].intervalId);
+        GameStore[roomId].intervalId = null;
+      }
+      const winner =
+        GameStore[roomId].host.score > GameStore[roomId].guest.score
+          ? 'host'
+          : 'guest';
+      this.gameService.finishGame(roomId, winner);
+      delete GameStore[roomId];
+    } else {
+      this.server.emit('getGameData', GameStore[roomId].getGameData());
     }
   }
 
@@ -238,56 +280,14 @@ export class GameGateway
     @ConnectedSocket() socket: Socket,
   ) {
     this.gameService.joinGameRoom(socket, body.room_id);
-    this.logger.log(socket.id + ' join in ' + body.room_id);
-  }
-
-  updateGame(roomId: string, socket: Socket) {
-    GameStore[roomId].update();
-    if (GameStore[roomId].over === true) {
-      socket.emit('endGame');
-      socket.to(roomId).emit('endGame');
-      if (GameStore[roomId].intervalId) {
-        clearInterval(GameStore[roomId].intervalId);
-        GameStore[roomId].intervalId = null;
-      }
-    }
-    socket.emit('getGameData', GameStore[roomId].getGameData());
-    socket.to(roomId).emit('getGameData', GameStore[roomId].getGameData());
-  }
-
-  @SubscribeMessage('startGame')
-  startGame(
-    @MessageBody() body: JoinRoomDto,
-    @ConnectedSocket() socket: Socket,
-  ) {
-    if ([...socket.rooms.values()].length < 2) {
-      return;
-    }
-
-    const roomId = [...socket.rooms.values()][1];
-    if (roomId === undefined) {
-      this.logger.log('roomId is undefined');
-      return;
-    }
-    if (roomId in GameStore) {
-      return;
-    }
-    this.logger.log(`${roomId} game start!`);
-    GameStore[roomId] = new CGame();
-    socket.emit('gameData', GameStore[roomId]);
-    socket.to(roomId).emit('gameData', GameStore[roomId]);
-
-    GameStore[roomId].intervalId = setInterval(
-      () => this.updateGame(roomId, socket),
-      1000 / 60,
-    );
+    this.logger.log(socket.id + ' joi n  in ' + body.room_id);
   }
 
   @SubscribeMessage('keyEvent')
   keyEvent(@MessageBody() body: KyeEventDto) {
     const roomId = body.room_id;
     const cur_key: KyeEvent = body.key;
-    let direction;
+    let direction: DIRECTION;
     if (cur_key == 'keyUp') direction = DIRECTION.UP;
     else if (cur_key == 'keyDown') direction = DIRECTION.DOWN;
     else if (cur_key == 'keyIdle') direction = DIRECTION.IDLE;
@@ -296,10 +296,6 @@ export class GameGateway
     else if (body.identity === 'Guest')
       GameStore[roomId].setGuestMove(direction);
   }
-
-  /**
-   * 기준 room id를 받는 조건과 아닌 조건... 이 있나ss...?
-   */
 
   @SubscribeMessage('endGame')
   endGame(@MessageBody() body: JoinRoomDto) {

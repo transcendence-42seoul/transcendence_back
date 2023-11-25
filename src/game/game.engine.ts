@@ -7,8 +7,8 @@ export enum DIRECTION {
   RIGHT = 4,
 }
 
-const ROUNDS: number[] = [7];
-const ROUND_SCORE = 7;
+const ROUND_SCORE = 3;
+const ROUNDS: number[] = [ROUND_SCORE];
 const COLORS = ['#1abc9c', '#2ecc71', '#3498db', '#8c52ff', '#9b59b6'];
 
 const canvasWidth = 1400;
@@ -109,8 +109,6 @@ export class CGame {
   };
 
   constructor(aiVersion: boolean = false) {
-    // this.canvas.style.width = canvasWidth / 2 + 'px';
-    // this.canvas.style.height = canvasHeight / 2 + 'px';
     this.aiVersion = aiVersion;
     this.host = PongPlayer.new.call(this, 'left');
     this.guest = PongPlayer.new.call(this, 'right');
@@ -132,15 +130,6 @@ export class CGame {
   };
 
   makeInit = () => {
-    // this.canvas = document.querySelector('canvas')!;
-    // this.context = this.canvas.getContext('2d');
-
-    // canvasWidth = 1400;
-    // canvasHeight = 1000;
-
-    // this.canvas.style.width = canvasWidth / 2 + 'px';
-    // this.canvas.style.height = canvasHeight / 2 + 'px';
-
     this.host = PongPlayer.new.call(this, 'left');
     this.guest = PongPlayer.new.call(this, 'right');
     this.ball = Ball.new.call(this);
@@ -151,11 +140,6 @@ export class CGame {
     this.timer = this.round = 0;
     this.color = '#8c52ff';
   };
-
-  // initialize = () => {
-  //   this.menu();
-  //   this.listen();
-  // };
 
   // Update all objects (move the player, ai, ball, increment the score, etc.)
   update = () => {
@@ -218,7 +202,7 @@ export class CGame {
       else if (this.guest.move === DIRECTION.DOWN)
         this.guest.y += this.guest.speed;
 
-      // Handle ai (AI) wall collision
+      // Handle ai (AI == Host) wall collision
       if (this.guest.y >= canvasHeight - this.guest.height)
         this.guest.y = canvasHeight - this.guest.height;
       else if (this.guest.y <= 0) this.guest.y = 0;
