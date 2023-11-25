@@ -60,6 +60,8 @@ export class GameService {
           gameGuest.idx,
           gameGuest.ranking.score,
         );
+        console.log('gameHost.ranking.score : ', gameHost.ranking.score);
+        console.log('gameGuest.ranking.score : ', gameGuest.ranking.score);
       } catch (error) {
         this.logger.error(error);
       }
@@ -68,7 +70,7 @@ export class GameService {
       gameGuest.record.general_game += 1;
       gameWinner.record.general_win += 1;
     }
-    game.game_status = false;
+    // game.game_status = false;
 
     try {
       await this.recordService.updateRecord(gameHost.idx, gameHost.record);

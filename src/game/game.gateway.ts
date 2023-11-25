@@ -250,7 +250,7 @@ export class GameGateway
   update(roomId: string) {
     GameStore[roomId].update();
     if (GameStore[roomId].over === true) {
-      this.server.emit('endGame');
+      this.server.emit('getGameData', GameStore[roomId].getGameData());
       if (GameStore[roomId].intervalId) {
         clearInterval(GameStore[roomId].intervalId);
         GameStore[roomId].intervalId = null;
@@ -261,6 +261,7 @@ export class GameGateway
           : 'guest';
       this.gameService.finishGame(roomId, winner);
       delete GameStore[roomId];
+      this.server.emit('endGame');
     } else {
       this.server.emit('getGameData', GameStore[roomId].getGameData());
     }
