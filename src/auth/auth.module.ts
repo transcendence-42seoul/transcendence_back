@@ -17,7 +17,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt/jwt.stretgy';
 import { ConfigModule } from '@nestjs/config';
 import { BlockRepository } from 'src/block/block.repository';
-import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -43,9 +42,8 @@ import { JwtService } from '@nestjs/jwt';
     FriendRequestPairRepository,
     BanRepository,
     JwtStrategy,
-    JwtService,
     BlockRepository,
   ],
-  exports: [AuthService, JwtStrategy, JwtService],
+  exports: [AuthService, JwtStrategy],
 })
 export class AuthModule {}

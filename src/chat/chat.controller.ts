@@ -61,6 +61,7 @@ export class ChatController {
 
   @Get('/private-public')
   async getPrivatePublicChats(): Promise<Chat[]> {
+    console.log('getPrivatePublicChats');
     return await this.chatService.getPrivatePublicChats();
   }
 
@@ -69,7 +70,7 @@ export class ChatController {
     @Param('userIdx', ParseIntPipe) userIdx: number,
     @Param('chatIdx', ParseIntPipe) chatIdx: number,
     @Body('password') password: string,
-  ): Promise<ChatParticipant> {
+  ): Promise<void> {
     return await this.chatParticipantService.joinPrivateChat(
       userIdx,
       chatIdx,
@@ -81,7 +82,7 @@ export class ChatController {
   async joinPublicChat(
     @Param('userIdx', ParseIntPipe) userIdx: number,
     @Param('chatIdx', ParseIntPipe) chatIdx: number,
-  ): Promise<ChatParticipant> {
+  ): Promise<void> {
     return await this.chatParticipantService.joinPublicChat(userIdx, chatIdx);
   }
 

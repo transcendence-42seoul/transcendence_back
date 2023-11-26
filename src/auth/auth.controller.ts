@@ -55,7 +55,7 @@ export class AuthController {
         id: user.id,
         user_idx: user.idx,
       });
-      res.cookie('user_idx', user.idx, { httpOnly: true, sameSite: 'lax' });
+      // res.cookie('user_idx', user.idx, { sameSite: 'lax' });
       res.cookie('token', newToken, { sameSite: 'lax' });
 
       res.redirect('http://localhost:5173/main');

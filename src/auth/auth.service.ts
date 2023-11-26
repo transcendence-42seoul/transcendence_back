@@ -7,7 +7,6 @@ import * as QRCode from 'qrcode';
 import { TFASecret } from 'src/user/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { LoginRequestDto } from './dto/login.request.dto';
-import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class AuthService {
@@ -90,10 +89,16 @@ export class AuthService {
     }
   }
 
+  // async jwtLogin(data: LoginRequestDto) {
+  //   const { id, user_idx } = data;
+  //   const payload = { id, user_idx };
+  //   return this.jwtService.sign(payload, { secret: process.env.SECRET_KEY });
+  // }
+
   async jwtLogin(data: LoginRequestDto) {
     const { id, user_idx } = data;
     const payload = { id, user_idx };
-    return this.jwtService.sign(payload, { secret: process.env.SECRET_KEY });
+    return this.jwtService.sign(payload);
   }
 
   parsingJwtData(token: string) {
@@ -106,12 +111,12 @@ export class AuthService {
     }
   }
 
-  async validateToken(token: string): Promise<any> {
-    try {
-      const decoded = jwt.verify(token, process.env.SECRET_KEY);
-      return decoded;
-    } catch (error) {
-      throw new Error('Invalid token');
-    }
-  }
+  // async validateToken(token: string): Promise<any> {
+  //   try {
+  //     const decoded = jwt.verify(token, process.env.SECRET_KEY);
+  //     return decoded;
+  //   } catch (error) {
+  //     throw new Error('Invalid token');
+  //   }
+  // }
 }
