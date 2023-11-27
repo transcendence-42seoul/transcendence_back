@@ -219,7 +219,7 @@ export class GameGateway
         this.server.to(game.room_id).emit('countDown', count);
         if (count === 0) {
           clearInterval(countDownInterval);
-          this.start(game.room_id);
+          this.start(game.room_id, gameMode);
           this.userService.updateStatus(hostData.idx, UserStatus.PLAYING);
         }
       }, 1000);
@@ -231,12 +231,12 @@ export class GameGateway
     }
   }
 
-  start(roomId: string) {
+  start(roomId: string, gameMode: GameModeType) {
     if (roomId in GameStore) {
       return;
     }
     this.logger.log(`${roomId} game start!`);
-    GameStore[roomId] = new CGame();
+    GameStore[roomId] = new CGame(false, gameMode);
     this.server.emit('gameData', GameStore[roomId]);
 
     GameStore[roomId].intervalId = setInterval(
