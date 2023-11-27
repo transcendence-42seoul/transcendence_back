@@ -1,3 +1,5 @@
+import { GameModeType } from './entities/game.entity';
+
 // Global Variables
 export enum DIRECTION {
   IDLE = 0,
@@ -7,15 +9,15 @@ export enum DIRECTION {
   RIGHT = 4,
 }
 
-const ROUND_SCORE = 3;
+const ROUND_SCORE = 2;
 const ROUNDS: number[] = [ROUND_SCORE];
-const COLORS = ['#1abc9c', '#2ecc71', '#3498db', '#8c52ff', '#9b59b6'];
 
 const canvasWidth = 1400;
 const canvasHeight = 1000;
 
 const Ball = {
-  new: function (incrementedSpeed?: number) {
+  new: function (gameMode: GameModeType) {
+    const ballSpeed = gameMode % 2 === 0 ? 10 : 5;
     return {
       width: 18,
       height: 18,
@@ -23,7 +25,7 @@ const Ball = {
       y: canvasHeight / 2 - 9,
       moveX: DIRECTION.IDLE,
       moveY: DIRECTION.IDLE,
-      speed: incrementedSpeed || 7,
+      speed: ballSpeed,
     };
   },
 };
@@ -64,7 +66,12 @@ type PlayerType = {
 
 // The ai object (The two lines that move up and down)
 const PongPlayer = {
-  new: function (this: { canvas: HTMLCanvasElement }, side: Side) {
+  new: function (
+    this: { canvas: HTMLCanvasElement },
+    side: Side,
+    gameMode: GameModeType,
+  ) {
+    const barSpeed = gameMode % 2 === 0 ? 12 : 8;
     return {
       width: 18,
       height: 180,
@@ -72,7 +79,7 @@ const PongPlayer = {
       y: canvasHeight / 2 - 35,
       score: 0,
       move: DIRECTION.IDLE,
-      speed: 8,
+      speed: barSpeed,
     };
   },
 };
@@ -108,17 +115,16 @@ export class CGame {
     };
   };
 
-  constructor(aiVersion: boolean = false) {
+  constructor(aiVersion: boolean = false, gameMode: GameModeType) {
     this.aiVersion = aiVersion;
-    this.host = PongPlayer.new.call(this, 'left');
-    this.guest = PongPlayer.new.call(this, 'right');
-    this.ball = Ball.new.call(this);
+    this.host = PongPlayer.new.call(this, 'left', gameMode);
+    this.guest = PongPlayer.new.call(this, 'right', gameMode);
+    this.ball = Ball.new.call(this, gameMode);
 
-    this.guest.speed = 5;
     this.running = this.over = false;
     this.turn = this.guest;
     this.timer = this.round = 0;
-    this.color = '#8c52ff';
+    this.color = '#819FF7';
   }
 
   setHostMove = (dir: number) => {
@@ -134,11 +140,10 @@ export class CGame {
     this.guest = PongPlayer.new.call(this, 'right');
     this.ball = Ball.new.call(this);
 
-    this.guest.speed = 5;
     this.running = this.over = false;
     this.turn = this.guest;
     this.timer = this.round = 0;
-    this.color = '#8c52ff';
+    this.color = '#819FF7';
   };
 
   // Update all objects (move the player, ai, ball, increment the score, etc.)
@@ -243,14 +248,6 @@ export class CGame {
       // there are not.
       if (!ROUNDS[this.round + 1]) {
         this.over = true;
-      } else {
-        // If there is another round, reset all the values and increment the round number.
-        this.color = this._generateRoundColor();
-        this.host.score = this.guest.score = 0;
-        this.host.speed += 0.5;
-        this.guest.speed += 1;
-        this.ball.speed += 1;
-        this.round += 1;
       }
     }
     // Check to see if the ai/AI has won the round.
@@ -274,13 +271,4 @@ export class CGame {
   };
 
   // Select a random color as the background of each level/round.
-  _generateRoundColor = (): string => {
-    const newColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-    if (newColor === this.color) return this._generateRoundColor();
-    return newColor;
-  };
 }
-
-// const Pong = new CGame();
-
-// Pong.initialize();
