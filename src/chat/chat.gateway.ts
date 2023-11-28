@@ -14,13 +14,13 @@ import { Socket } from 'socket.io';
 import { JoinChatDto } from './dto/join.chat.dto';
 import { ChatParticipantService } from './chat.participant.service';
 import { ChatMessageService } from './chat.message.service';
-import { ChatParticipant } from './chat.participant.entity';
 import { ChatType } from './chat.entity';
 import { ChatMessageDto } from './dto/chat.message.dto';
 import { AuthService } from 'src/auth/auth.service';
 import CreateChatDto from './dto/chat.create.dto';
 import { ChatMessage } from './chat.message.entity';
 import { Server } from 'socket.io';
+import { UserService } from 'src/user/user.service';
 
 interface IChat {
   idx: number;
@@ -41,6 +41,7 @@ export class ChatGateway
   constructor(
     private readonly chatService: ChatService,
     private readonly authService: AuthService,
+    private readonly userService: UserService,
     private readonly chatParticipantService: ChatParticipantService,
     private readonly chatMessageService: ChatMessageService,
   ) {}
@@ -178,18 +179,19 @@ export class ChatGateway
         message,
       );
 
+    const user = await this.userService.findByIdx(socket.data.userIdx);
+
     const makeIChat: IChat = {
       idx: chatMessage.idx,
       content: chatMessage.content,
       send_at: chatMessage.send_at,
       user: {
         idx: chatMessage.user.idx,
-        nickname: chatMessage.user.nickname,
+        nickname: user.nickname,
       },
     };
 
-    console.log('handleMessage');
-    console.log(room);
+    console.log(makeIChat);
     this.server.to(room).emit('receiveMessage', makeIChat);
     // socket.emit('receiveMessage', makeIChat);
     // socket.broadcast.to(room).emit('receiveMessage', makeIChat);

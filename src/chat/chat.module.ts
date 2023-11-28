@@ -16,6 +16,13 @@ import { BanRepository } from './ban/ban.repository';
 import { MuteRepository } from './mute/mute.repository';
 import { HttpModule } from '@nestjs/axios';
 import { AuthModule } from 'src/auth/auth.module';
+import { UserService } from 'src/user/user.service';
+import { RankingRepository } from 'src/ranking/ranking.repository';
+import { RecordRepository } from 'src/record/record.repository';
+import { AvatarRepository } from 'src/avatar/avatar.repository';
+import { FriendRequestRepository } from 'src/friend/friend.request.repository';
+import { FriendRequestPairRepository } from 'src/friend/friend.request.pair.repository';
+import { BlockRepository } from 'src/block/block.repository';
 
 @Module({
   imports: [
@@ -32,7 +39,14 @@ import { AuthModule } from 'src/auth/auth.module';
     ChatMessageService,
     ChatMessageRepository,
     BanRepository,
+    RankingRepository,
+    RecordRepository,
+    AvatarRepository,
+    FriendRequestRepository,
+    FriendRequestPairRepository,
+    BlockRepository,
     MuteRepository,
+    UserService,
     UserRepository,
     ChatGateway,
   ],
