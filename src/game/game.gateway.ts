@@ -279,7 +279,7 @@ export class GameGateway
     @ConnectedSocket() socket: Socket,
   ) {
     this.gameService.joinGameRoom(socket, body.room_id);
-    this.logger.log(socket.id + ' joi n  in ' + body.room_id);
+    this.logger.log(socket.id + ' join in ' + body.room_id);
   }
 
   @SubscribeMessage('keyEvent')

@@ -30,7 +30,7 @@ export class ChatParticipantService {
     userIdx: number,
     chatIdx: number,
     password: string,
-  ): Promise<ChatParticipant> {
+  ): Promise<void> {
     const user = await this.userRepository.findOne({ where: { idx: userIdx } });
     if (!user)
       throw new NotFoundException(`User with idx "${userIdx}" not found`);
@@ -64,13 +64,10 @@ export class ChatParticipantService {
 
     await this.chatRepository.save(chat);
 
-    return await this.chatParticipantRepository.createParticipant(chat, user);
+    await this.chatParticipantRepository.createParticipant(chat, user);
   }
 
-  async joinPublicChat(
-    userIdx: number,
-    chatIdx: number,
-  ): Promise<ChatParticipant> {
+  async joinPublicChat(userIdx: number, chatIdx: number): Promise<void> {
     const user = await this.userRepository.findOne({ where: { idx: userIdx } });
     if (!user)
       throw new NotFoundException(`User with idx "${userIdx}" not found`);
@@ -130,7 +127,7 @@ export class ChatParticipantService {
 
     await this.chatRepository.save(chat);
 
-    return await this.chatParticipantRepository.createParticipant(chat, user);
+    await this.chatParticipantRepository.createParticipant(chat, user);
   }
 
   async getChatParticipants(chatIdx: number): Promise<ChatParticipant[]> {
@@ -140,6 +137,17 @@ export class ChatParticipantService {
 
     return await this.chatParticipantRepository.find({
       where: { chat: { idx: chatIdx } },
+      relations: ['user'],
+    });
+  }
+
+  async getChatOwner(chatIdx: number): Promise<ChatParticipant[]> {
+    const chat = await this.chatRepository.findOne({ where: { idx: chatIdx } });
+    if (!chat)
+      throw new NotFoundException(`Chat with idx "${chatIdx}" not found`);
+
+    return await this.chatParticipantRepository.find({
+      where: { chat: { idx: chatIdx }, role: Role.OWNER },
       relations: ['user'],
     });
   }

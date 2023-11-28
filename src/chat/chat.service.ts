@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from 'src/user/user.repository';
 import { ChatParticipantRepository } from './chat.participant.repository';
 import { Chat, ChatType } from './chat.entity';
+import { Socket } from 'socket.io';
 
 @Injectable()
 export class ChatService {
@@ -40,6 +41,7 @@ export class ChatService {
   }
 
   async createPublic(idx: number, name: string, limit: number): Promise<Chat> {
+    console.log(idx, name, limit);
     if (!name) throw new NotFoundException('Name is required');
 
     const user = await this.userRepository.findOne({ where: { idx } });
@@ -47,6 +49,16 @@ export class ChatService {
 
     const chat = await this.chatRepository.createPublic(name, limit);
     await this.chatParticipantRepository.createOwnerParticipant(chat, user);
+    return chat;
+  }
+
+  async getChatByIdx(chatIdx: number): Promise<Chat> {
+    const chat = await this.chatRepository.findOne({
+      where: { idx: chatIdx },
+    });
+    if (!chat)
+      throw new NotFoundException(`Chat with idx "${chatIdx}" not found`);
+
     return chat;
   }
 
@@ -119,5 +131,14 @@ export class ChatService {
     if (!chat) throw new NotFoundException(`Chat with idx "${idx}" not found`);
 
     await this.chatRepository.remove(chat);
+  }
+
+  joinChatRoom(socket: Socket, roomId: string) {
+    socket.join(roomId);
+  }
+
+  leaveChatRoom(socket: Socket, roomId: string) {
+    socket.leave(roomId);
+    console.log('leave idx', roomId);
   }
 }

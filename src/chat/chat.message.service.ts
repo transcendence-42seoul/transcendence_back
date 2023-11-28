@@ -87,15 +87,13 @@ export class ChatMessageService {
       throw new NotFoundException(`User with idx "${userIdx}" not found`);
     }
 
-    const blockedUsers = user.blocker;
-
-    const chatMessages = await this.chatMessageRepository.find({
-      where: {
-        chat: { idx: chatIdx },
-        user: { idx: Not(In(blockedUsers.map((bu) => bu.blocked))) },
-      },
-      relations: ['user'],
-    });
+    const chatMessages = await this.chatMessageRepository
+      .createQueryBuilder('chatMessage')
+      .leftJoinAndSelect('chatMessage.user', 'user')
+      .select(['chatMessage', 'user.idx', 'user.nickname'])
+      .where('chatMessage.chat.idx = :chatIdx', { chatIdx })
+      .orderBy('chatMessage.send_at', 'ASC')
+      .getMany();
 
     return chatMessages;
   }
