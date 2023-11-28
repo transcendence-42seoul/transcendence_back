@@ -10,6 +10,6 @@ import { UserRepository } from 'src/user/user.repository';
   imports: [TypeOrmModule.forFeature([Ranking])],
   controllers: [RankingController],
   providers: [RankingService, RankingRepository, UserRepository],
-  exports: [RankingRepository],
+  exports: [RankingRepository, RankingService],
 })
 export class RankingModule {}
