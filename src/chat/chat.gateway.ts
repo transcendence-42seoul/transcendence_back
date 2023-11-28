@@ -120,11 +120,12 @@ export class ChatGateway
     const userIdx = socket.data.userIdx;
     const chatIdx = body.room_id;
     const password = body.password;
+    const room = `room-${chatIdx}`;
 
     const chat = await this.chatService.getChatByIdx(chatIdx);
 
     try {
-      const participant =
+      let participant =
         await this.chatParticipantService.getChatParticipants(chatIdx);
       let isParticipate = false;
       for (const p of participant) {
@@ -149,9 +150,13 @@ export class ChatGateway
         }
       }
 
+      participant =
+        await this.chatParticipantService.getChatParticipants(chatIdx);
+
       // 룸에 넣어줌
-      this.chatService.joinChatRoom(socket, `room-${chatIdx}`);
-      console.log('join idx', `room-${chatIdx}`);
+      this.chatService.joinChatRoom(socket, room);
+      this.server.to(room).emit('receiveChatParticipants', participant);
+      console.log('join idx', room);
       return { status: 'success' };
     } catch (error) {
       console.log(error);
@@ -204,6 +209,7 @@ export class ChatGateway
   ) {
     console.log('leaveChat');
     const chatIdx = room_id;
+    const room = `room-${chatIdx}`;
     const userIdx = socket.data.userIdx;
 
     try {
@@ -215,7 +221,13 @@ export class ChatGateway
         await this.chatService.deleteChat(chatIdx);
       }
 
-      this.chatService.leaveChatRoom(socket, `room-${chatIdx}`);
+      const participant =
+        await this.chatParticipantService.getChatParticipants(chatIdx);
+
+      console.log('participant', participant);
+
+      this.server.to(room).emit('receiveChatParticipants', participant);
+      this.chatService.leaveChatRoom(socket, room);
       return { status: 'success' };
     } catch (error) {
       return { status: 'error', message: error.message };

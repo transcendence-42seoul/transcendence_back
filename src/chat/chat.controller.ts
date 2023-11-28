@@ -49,11 +49,6 @@ export class ChatController {
     return await this.chatService.getDM(idx1, idx2);
   }
 
-  @Get('/data/:idx')
-  async getChat(@Param('idx', ParseIntPipe) idx: number): Promise<Chat> {
-    return await this.chatService.getChatByIdx(idx);
-  }
-
   @Get('/private')
   async getPrivateChats(): Promise<Chat[]> {
     return await this.chatService.getPrivateChats();
@@ -95,6 +90,7 @@ export class ChatController {
   async getChatParticipants(
     @Param('chatIdx') chatIdx: number,
   ): Promise<ChatParticipant[]> {
+    console.log('getChatParticipants');
     return await this.chatParticipantService.getChatParticipants(chatIdx);
   }
 
