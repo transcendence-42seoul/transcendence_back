@@ -139,5 +139,6 @@ export class ChatService {
 
   leaveChatRoom(socket: Socket, roomId: string) {
     socket.leave(roomId);
+    console.log('leave idx', roomId);
   }
 }

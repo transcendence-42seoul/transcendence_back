@@ -196,18 +196,18 @@ export class ChatGateway
 
   @SubscribeMessage('leaveChat')
   async handleLeaveChat(
-    @MessageBody() body: { room_id: number },
+    @MessageBody() room_id: number,
     @ConnectedSocket() socket: Socket,
   ) {
     console.log('leaveChat');
-    const chatIdx = body.room_id;
+    const chatIdx = room_id;
     const userIdx = socket.data.userIdx;
 
     try {
       await this.chatParticipantService.leaveChat(userIdx, chatIdx);
 
       const owner = await this.chatParticipantService.getChatOwner(chatIdx);
-      console.log(owner);
+      // console.log(owner);
       if (owner.length === 0) {
         await this.chatService.deleteChat(chatIdx);
       }
