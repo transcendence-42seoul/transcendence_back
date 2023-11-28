@@ -92,19 +92,20 @@ export class ChatGateway
     const password = body.password;
     const limit = parseInt(body.maxPeople, 10);
 
+    let chat;
     try {
       if (password === '') {
-        const chat = await this.chatService.createPublic(userIdx, name, limit);
-        return { status: 'success', chat: chat };
+        chat = await this.chatService.createPublic(userIdx, name, limit);
       } else {
-        const chat = await this.chatService.createPrivate(
+        chat = await this.chatService.createPrivate(
           userIdx,
           name,
           password,
           limit,
         );
-        return { status: 'success', chat: chat };
       }
+      this.chatService.joinChatRoom(socket, `room-${chat.idx}`);
+      return { status: 'success', chat: chat };
     } catch (error) {
       return { status: 'error', message: error.message };
     }
