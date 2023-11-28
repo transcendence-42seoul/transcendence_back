@@ -58,7 +58,7 @@ export class AuthController {
       // res.cookie('user_idx', user.idx, { sameSite: 'lax' });
       res.cookie('token', newToken, { sameSite: 'lax' });
 
-      res.redirect('http://localhost:5173/main');
+      res.redirect('http://localhost:5173/avatar-setting');
     } catch (error) {
       console.log('error', error);
       res.status(500).send('Internal Server Error');

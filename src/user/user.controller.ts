@@ -59,6 +59,19 @@ export class UserController {
     return await this.userService.findById(id);
   }
 
+  @Get('/check-nickname/:nickname')
+  async checkNickname(@Param('nickname') nickname: string): Promise<boolean> {
+    return await this.userService.isNicknameUnique(nickname);
+  }
+
+  @Patch('/:idx/nickname')
+  async updateUsername(
+    @Param('idx', ParseIntPipe) idx: number,
+    @Body('nickname') nickname: string,
+  ): Promise<User> {
+    return this.userService.updateUsername(idx, nickname);
+  }
+
   @Patch('/:idx/profile')
   async updateProfile(
     @Param('idx', ParseIntPipe) idx: number,

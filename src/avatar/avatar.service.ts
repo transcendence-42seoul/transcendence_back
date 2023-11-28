@@ -31,7 +31,7 @@ export class AvatarService {
     if (!avatar) throw new NotFoundException(`Can't find User ${idx}'s avatar`);
 
     const avatarDto = new AvatarDto();
-    avatarDto.image_data = file.Buffer;
+    avatarDto.image_data = file.buffer;
 
     try {
       if (avatarDto.image_data !== undefined)

@@ -102,6 +102,26 @@ export class UserService {
     return user;
   }
 
+  async isNicknameUnique(nickname: string): Promise<boolean> {
+    const user = await this.userRepository.findOne({ where: { nickname } });
+    if (user) return false;
+    return true;
+  }
+
+  async updateUsername(idx: number, nickname: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { idx } });
+    if (!user) throw new NotFoundException(`user with idx ${idx} not found`);
+
+    user.nickname = nickname;
+
+    try {
+      await this.userRepository.save(user);
+    } catch (error) {
+      throw error;
+    }
+    return user;
+  }
+
   async updateProfile(idx: number, userDto: UserDto): Promise<User> {
     const user = await this.userRepository.findOne({ where: { idx } });
     if (!user) throw new NotFoundException(`User with idx ${idx} not found`);
