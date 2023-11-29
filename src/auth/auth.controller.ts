@@ -17,6 +17,7 @@ import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { UserService } from 'src/user/user.service';
 import { JwtAuthGuard } from './jwt/jwt.guard';
+import { UserStatus } from 'src/user/user.entity';
 
 @Controller('auth')
 export class AuthController {
@@ -57,6 +58,8 @@ export class AuthController {
         id: user.id,
         user_idx: user.idx,
       });
+
+      this.userService.updateStatus(user.idx, UserStatus.ONLINE);
       // res.cookie('user_idx', user.idx, { sameSite: 'lax' });
       res.cookie('token', newToken, { sameSite: 'lax' });
 

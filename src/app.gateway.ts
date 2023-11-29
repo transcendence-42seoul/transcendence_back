@@ -37,6 +37,20 @@ export class appGateway
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
     this.logger.log('connected : ' + socket.id + ' in appGateway');
+
+    const token = socket.handshake.auth.token;
+    if (token) {
+      try {
+        const decoded = await this.authService.parsingJwtData(token.toString());
+        socket.data.userIdx = decoded.user_idx;
+      } catch (error) {
+        this.logger.error('Invalid token:', error);
+        socket.disconnect();
+      }
+    } else {
+      this.logger.error('No token provided');
+      socket.disconnect();
+    }
   }
 
   // 프론트에서는 recieve challenge 이벤트 (id) =>
@@ -62,6 +76,32 @@ export class appGateway
         status: requested.status,
         success: false,
       });
+    }
+  }
+
+  // @SubscribeMessage('login')
+  // async login(@ConnectedSocket() socket: Socket) {
+  //   const userIdx = socket.data.userIdx;
+  //   const user = await this.userService.findByIdx(userIdx);
+  //   if (user) {
+  //     await this.userService.updateStatus(userIdx, UserStatus.ONLINE);
+  //   }
+  // }
+
+  @SubscribeMessage('logout')
+  async logout(@ConnectedSocket() socket: Socket) {
+    const userIdx = socket.data.userIdx;
+    const user = await this.userService.findByIdx(userIdx);
+    if (user) {
+      await this.userService.updateStatus(userIdx, UserStatus.OFFLINE);
+    }
+  }
+  @SubscribeMessage('withdrawal')
+  async withdrawal(@ConnectedSocket() socket: Socket) {
+    const userIdx = socket.data.userIdx;
+    const user = await this.userService.findByIdx(userIdx);
+    if (user) {
+      await this.userService.deleteByIdx(userIdx);
     }
   }
 }
