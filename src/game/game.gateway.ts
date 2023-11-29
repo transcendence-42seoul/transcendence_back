@@ -87,24 +87,24 @@ export class GameGateway
   }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
-    const token = socket.handshake.query.token;
-    let temp;
+    const query_token = socket.handshake.query.token;
+    const auth_token = socket.handshake.auth.token;
+    const token = auth_token || query_token;
     try {
       const data = this.authService.parsingJwtData(token as string);
-      temp = data;
       if (!data) {
         throw new UnauthorizedException('Unauthorized access');
       }
+
+      const game = await this.gameService.getUserGame(data.user_idx);
+      if (game) {
+        socket.join(game.room_id);
+      }
+      if (game) this.logger.log('connected : ' + socket.id);
     } catch (error) {
       socket.emit('error', error.message);
       socket.disconnect();
     }
-
-    const game = await this.gameService.getUserGame(temp.user_idx);
-    if (game) {
-      socket.join(game.room_id);
-    }
-    if (game) this.logger.log('connected : ' + socket.id);
   }
 
   afterInit() {

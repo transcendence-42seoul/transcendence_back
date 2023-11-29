@@ -61,7 +61,6 @@ export class ChatController {
 
   @Get('/private-public')
   async getPrivatePublicChats(): Promise<Chat[]> {
-    console.log('getPrivatePublicChats');
     return await this.chatService.getPrivatePublicChats();
   }
 
