@@ -16,6 +16,7 @@ import { ChatModule } from './chat/chat.module';
 import { KickModule } from './chat/kick/kick.module';
 import { BanModule } from './chat/ban/ban.module';
 import { MuteModule } from './chat/mute/mute.module';
+import { appGateway } from './app.gateway';
 
 @Module({
   imports: [
@@ -35,6 +36,6 @@ import { MuteModule } from './chat/mute/mute.module';
     MuteModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, appGateway],
 })
 export class AppModule {}

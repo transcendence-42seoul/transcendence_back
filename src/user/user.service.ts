@@ -118,7 +118,26 @@ export class UserService {
     } catch (error) {
       throw error;
     }
-    return user;
+  }
+
+  async getStatusById(id: string): Promise<UserStatus> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      select: ['status'],
+    });
+    if (!user) throw new NotFoundException(`User with id ${id} not found`);
+    return user.status;
+  }
+
+  async getIsInclueGame(
+    id: string,
+  ): Promise<{ include: boolean; status: UserStatus }> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      select: ['host', 'guest', 'status'],
+    });
+    if (user.host || user.guest) return { include: true, status: user.status };
+    return { include: true, status: user.status };
   }
 
   async updateStatus(idx: number, status: UserStatus): Promise<User> {
