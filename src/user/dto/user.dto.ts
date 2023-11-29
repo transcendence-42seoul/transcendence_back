@@ -13,7 +13,7 @@ export class UserDto {
   static convertDto(userData: any): UserDto {
     const userDto = new UserDto();
     userDto.id = userData.login;
-    userDto.nickname = userData.login;
+    userDto.nickname = '';
     userDto.email = userData.email;
 
     return userDto;

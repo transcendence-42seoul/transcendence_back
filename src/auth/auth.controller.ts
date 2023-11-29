@@ -49,7 +49,9 @@ export class AuthController {
       const userInfo = await this.authService.getUserInfoFrom42(
         token.access_token,
       );
-      const user = await this.userService.findOrCreateUser(userInfo.data);
+      const { user, created } = await this.userService.findOrCreateUser(
+        userInfo.data,
+      );
 
       const newToken = await this.authService.jwtLogin({
         id: user.id,
@@ -58,7 +60,9 @@ export class AuthController {
       // res.cookie('user_idx', user.idx, { sameSite: 'lax' });
       res.cookie('token', newToken, { sameSite: 'lax' });
 
-      res.redirect('http://localhost:5173/avatar-setting');
+      console.log('created', created);
+      if (created == false) res.redirect('http://localhost:5173/main');
+      else res.redirect('http://localhost:5173/avatar-setting');
     } catch (error) {
       console.log('error', error);
       res.status(500).send('Internal Server Error');
