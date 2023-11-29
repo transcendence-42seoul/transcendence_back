@@ -64,7 +64,7 @@ export class ChatGateway
   async handleConnection(@ConnectedSocket() socket: Socket) {
     this.logger.log('connected : ' + socket.id);
 
-    const token = socket.handshake.query.token;
+    const token = socket.handshake.auth.token;
     if (token) {
       try {
         const decoded = await this.authService.parsingJwtData(token.toString());
@@ -129,14 +129,11 @@ export class ChatGateway
         await this.chatParticipantService.getChatParticipants(chatIdx);
       let isParticipate = false;
       for (const p of participant) {
-        console.log('user.idx', p.user.idx);
         if (p.user.idx === userIdx) {
           isParticipate = true;
           break;
         }
       }
-
-      console.log('isParticipate', isParticipate);
 
       if (!isParticipate) {
         if (chat.type === ChatType.PRIVATE) {
