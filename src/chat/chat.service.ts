@@ -52,6 +52,27 @@ export class ChatService {
     return chat;
   }
 
+  async updateChat(chatIdx: number, password: string): Promise<Chat> {
+    const chat = await this.chatRepository.findOne({ where: { idx: chatIdx } });
+    if (!chat)
+      throw new NotFoundException(`Chat with idx "${chatIdx}" not found`);
+
+    if (!password) {
+      chat.type = ChatType.PUBLIC;
+      chat.password = null;
+    } else {
+      chat.type = ChatType.PRIVATE;
+      chat.password = password;
+    }
+
+    try {
+      await this.chatRepository.save(chat);
+    } catch (error) {
+      throw error;
+    }
+    return chat;
+  }
+
   async getChatByIdx(chatIdx: number): Promise<Chat> {
     const chat = await this.chatRepository.findOne({
       where: { idx: chatIdx },

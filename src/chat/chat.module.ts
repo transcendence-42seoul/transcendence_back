@@ -50,5 +50,6 @@ import { BlockRepository } from 'src/block/block.repository';
     UserRepository,
     ChatGateway,
   ],
+  exports: [ChatService, ChatParticipantService],
 })
 export class ChatModule {}
