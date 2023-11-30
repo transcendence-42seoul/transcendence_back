@@ -12,6 +12,7 @@ import { ChatParticipant } from './chat.participant.entity';
 import * as bcrypt from 'bcrypt';
 import { Role } from './chat.participant.entity';
 import { BanRepository } from './ban/ban.repository';
+import { ChatMemberDto } from './dto/chat.member.dto';
 
 @Injectable()
 export class ChatParticipantService {
@@ -130,15 +131,25 @@ export class ChatParticipantService {
     await this.chatParticipantRepository.createParticipant(chat, user);
   }
 
-  async getChatParticipants(chatIdx: number): Promise<ChatParticipant[]> {
+  async getChatParticipants(chatIdx: number): Promise<ChatMemberDto[]> {
     const chat = await this.chatRepository.findOne({ where: { idx: chatIdx } });
     if (!chat)
       throw new NotFoundException(`Chat with idx "${chatIdx}" not found`);
 
-    return await this.chatParticipantRepository.find({
+    const participants = await this.chatParticipantRepository.find({
       where: { chat: { idx: chatIdx } },
       relations: ['user'],
     });
+
+    return participants.map((participant) => ({
+      idx: participant.idx,
+      role: participant.role,
+      user: {
+        idx: participant.user.idx,
+        nickname: participant.user.nickname,
+      },
+      isHighlighted: false,
+    }));
   }
 
   async getChatOwner(chatIdx: number): Promise<ChatParticipant[]> {

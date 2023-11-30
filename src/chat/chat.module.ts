@@ -23,6 +23,7 @@ import { AvatarRepository } from 'src/avatar/avatar.repository';
 import { FriendRequestRepository } from 'src/friend/friend.request.repository';
 import { FriendRequestPairRepository } from 'src/friend/friend.request.pair.repository';
 import { BlockRepository } from 'src/block/block.repository';
+import { KickService } from './kick/kick.service';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { BlockRepository } from 'src/block/block.repository';
     UserService,
     UserRepository,
     ChatGateway,
+    KickService,
   ],
   exports: [ChatService, ChatParticipantService],
 })

@@ -21,6 +21,8 @@ import CreateChatDto from './dto/chat.create.dto';
 import { ChatMessage } from './chat.message.entity';
 import { Server } from 'socket.io';
 import { UserService } from 'src/user/user.service';
+import { KickService } from './kick/kick.service';
+import { KickChatDto } from './dto/kick.chat.dto';
 
 interface IChat {
   idx: number;
@@ -44,6 +46,7 @@ export class ChatGateway
     private readonly userService: UserService,
     private readonly chatParticipantService: ChatParticipantService,
     private readonly chatMessageService: ChatMessageService,
+    private readonly kickService: KickService,
   ) {}
   private logger = new Logger('chats'); // 테스트용 다쓰면 지워도 됨.
 
@@ -106,7 +109,7 @@ export class ChatGateway
         );
       }
       this.chatService.joinChatRoom(socket, `room-${chat.idx}`);
-      return { status: 'success', chat: chat };
+      return { status: 'success', chatIdx: chat.idx };
     } catch (error) {
       return { status: 'error', message: error.message };
     }
@@ -125,10 +128,10 @@ export class ChatGateway
     const chat = await this.chatService.getChatByIdx(chatIdx);
 
     try {
-      let participant =
+      let participants =
         await this.chatParticipantService.getChatParticipants(chatIdx);
       let isParticipate = false;
-      for (const p of participant) {
+      for (const p of participants) {
         if (p.user.idx === userIdx) {
           isParticipate = true;
           break;
@@ -147,12 +150,25 @@ export class ChatGateway
         }
       }
 
-      participant =
+      participants =
         await this.chatParticipantService.getChatParticipants(chatIdx);
+
+      const filteredParticipants = participants.map((participant) => ({
+        idx: participant.idx,
+        role: participant.role,
+        user: {
+          idx: participant.user.idx,
+          nickname: participant.user.nickname,
+        },
+      }));
+
+      console.log(filteredParticipants);
 
       // 룸에 넣어줌
       this.chatService.joinChatRoom(socket, room);
-      this.server.to(room).emit('receiveChatParticipants', participant);
+      this.server
+        .to(room)
+        .emit('receiveChatParticipants', filteredParticipants);
       console.log('join idx', room);
       return { status: 'success' };
     } catch (error) {
@@ -218,16 +234,43 @@ export class ChatGateway
         await this.chatService.deleteChat(chatIdx);
       }
 
-      const participant =
+      const participants =
         await this.chatParticipantService.getChatParticipants(chatIdx);
 
-      console.log('participant', participant);
+      const filteredParticipants = participants.map((participant) => ({
+        idx: participant.idx,
+        role: participant.role,
+        user: {
+          idx: participant.user.idx,
+          nickname: participant.user.nickname,
+        },
+      }));
 
-      this.server.to(room).emit('receiveChatParticipants', participant);
+      console.log('participant', participants);
+
+      this.server
+        .to(room)
+        .emit('receiveChatParticipants', filteredParticipants);
       this.chatService.leaveChatRoom(socket, room);
       return { status: 'success' };
     } catch (error) {
       return { status: 'error', message: error.message };
     }
+  }
+
+  @SubscribeMessage('kick')
+  async handleKick(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() body: KickChatDto,
+  ) {
+    const chatIdx = body.chatIdx;
+    const kickedIdx = body.kickedIdx;
+    const kickerIdx = socket.data.userIdx;
+    console.log('kick', chatIdx, kickedIdx, kickerIdx);
+    await this.kickService.kickParticipant(
+      parseInt(chatIdx),
+      kickerIdx,
+      kickedIdx,
+    );
   }
 }

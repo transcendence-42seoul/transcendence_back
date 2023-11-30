@@ -9,10 +9,10 @@ import {
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { Chat } from './chat.entity';
-import { ChatParticipant } from './chat.participant.entity';
 import { ChatParticipantService } from './chat.participant.service';
 import { ChatMessageService } from './chat.message.service';
 import { ChatMessage } from './chat.message.entity';
+import { ChatMemberDto } from './dto/chat.member.dto';
 
 @Controller('chats')
 export class ChatController {
@@ -93,7 +93,7 @@ export class ChatController {
   @Get('/participants/:chatIdx')
   async getChatParticipants(
     @Param('chatIdx') chatIdx: number,
-  ): Promise<ChatParticipant[]> {
+  ): Promise<ChatMemberDto[]> {
     return await this.chatParticipantService.getChatParticipants(chatIdx);
   }
 
