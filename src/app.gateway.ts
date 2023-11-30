@@ -32,13 +32,14 @@ export class appGateway
 
   afterInit() {}
 
-  private logger = new Logger('games');
+  private logger = new Logger('app');
 
   async handleDisconnect(@ConnectedSocket() socket: Socket) {
     const token = socket.handshake.auth.token || socket.handshake.query.token;
     const userData = await this.authService.parsingJwtData(token);
     const userIdx = userData.user_idx;
     delete this.onlineUsers[userIdx];
+
     try {
       await this.userService.updateStatus(userIdx, UserStatus.OFFLINE);
     } catch (error) {
@@ -64,35 +65,51 @@ export class appGateway
   // 챌린지 도전자 신청
   @SubscribeMessage('checkEnableChallengeGame')
   async checkEnableChallengeGame(
-    @MessageBody() body: { requesterId: string; requestedId: string },
+    @MessageBody() body: { requestedIdx: number },
     @ConnectedSocket() socket: Socket,
   ) {
-    const requester = await this.userService.getIsInclueGame(body.requesterId);
-    const requested = await this.userService.getIsInclueGame(body.requestedId);
-    if (requester.include || requested.include) {
-      socket.emit('checkEnableChallengeGameSuccess', {
-        status: 'OFFLINE',
-        success: false,
-      });
-      return;
-    }
+    console.log('제발!!!');
+    try {
+      const userIdx = await this.getUserIdx(socket);
+      const requester = await this.userService.getIsInclueGame(userIdx);
+      const requested = await this.userService.getIsInclueGame(
+        body.requestedIdx,
+      );
+      if (requester.include || requested.include) {
+        socket.emit('checkEnableChallengeGameSuccess', {
+          status: 'OFFLINE',
+          success: false,
+        });
+        return;
+      }
 
-    if (requested.status === UserStatus.ONLINE) {
-      socket.emit('checkEnableChallengeGameSuccess', {
-        status: 'ONLINE',
-        success: true,
-      });
-      this.server
-        .to(this.onlineUsers[body.requestedId])
-        .emit('requestedChallenge', {});
-    } else if (
-      requested.status === UserStatus.OFFLINE ||
-      requested.status === UserStatus.PLAYING
-    ) {
-      socket.emit('checkEnableChallengeGameSuccess', {
-        status: requested.status,
-        success: false,
-      });
+      if (requested.status === UserStatus.ONLINE) {
+        socket.emit('checkEnableChallengeGameSuccess', {
+          status: 'ONLINE',
+          success: true,
+        });
+        const nickname = await this.userService.getNickname(userIdx);
+        this.server
+          .to(this.onlineUsers[body.requestedIdx])
+          .emit('requestedChallenge', { nickname });
+      } else if (
+        requested.status === UserStatus.OFFLINE ||
+        requested.status === UserStatus.PLAYING
+      ) {
+        socket.emit('checkEnableChallengeGameSuccess', {
+          status: requested.status,
+          success: false,
+        });
+      }
+    } catch (error) {
+      this.logger.error(error);
     }
+  }
+
+  async getUserIdx(socket: Socket) {
+    const token = socket.handshake.auth.token || socket.handshake.query.token;
+    const userData = await this.authService.parsingJwtData(token);
+    const userIdx = userData.user_idx;
+    return userIdx;
   }
 }
