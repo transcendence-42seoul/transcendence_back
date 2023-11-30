@@ -107,7 +107,7 @@ export class ChatGateway
         );
       }
       this.chatService.joinChatRoom(socket, `room-${chat.idx}`);
-      return { status: 'success', chat: chat };
+      return { status: 'success', chatIdx: chat.idx };
     } catch (error) {
       return { status: 'error', message: error.message };
     }
