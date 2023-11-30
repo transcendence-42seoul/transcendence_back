@@ -94,7 +94,6 @@ export class ChatController {
   async getChatParticipants(
     @Param('chatIdx') chatIdx: number,
   ): Promise<ChatParticipant[]> {
-    console.log('getChatParticipants');
     return await this.chatParticipantService.getChatParticipants(chatIdx);
   }
 

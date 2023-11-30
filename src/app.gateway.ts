@@ -13,8 +13,11 @@ import {
 import { GameService } from './game/game.service';
 import { Logger, UnauthorizedException } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { JoinRoomDto } from './game/dto/join.room.dto';
 import { UserStatus } from 'src/user/user.entity';
+import { Role } from './chat/chat.participant.entity';
+import { ChatService } from './chat/chat.service';
+import { UserRepository } from './user/user.repository';
+import { ChatParticipantService } from './chat/chat.participant.service';
 
 @WebSocketGateway({ namespace: 'appGateway' })
 export class appGateway
@@ -25,6 +28,9 @@ export class appGateway
     private readonly gameService: GameService,
     private readonly authService: AuthService,
     private readonly userService: UserService,
+    private readonly chatService: ChatService,
+    private readonly userRepository: UserRepository,
+    private readonly chatParticipantService: ChatParticipantService,
   ) {}
 
   afterInit() {}
@@ -96,10 +102,36 @@ export class appGateway
       await this.userService.updateStatus(userIdx, UserStatus.OFFLINE);
     }
   }
+
   @SubscribeMessage('withdrawal')
   async withdrawal(@ConnectedSocket() socket: Socket) {
     const userIdx = socket.data.userIdx;
     const user = await this.userService.findByIdx(userIdx);
+
+    if (user) {
+      const userWithParticipants = await this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.participants', 'participant')
+        .leftJoinAndSelect('participant.chat', 'chat')
+        .where('user.id = :id', { id: user.id })
+        .getOne();
+
+      user.participants = userWithParticipants
+        ? userWithParticipants.participants
+        : [];
+    }
+
+    for (let i = 0; i < user.participants.length; i++) {
+      if (user.participants[i].role === Role.OWNER) {
+        console.log(user.participants[i].chat.idx);
+        await this.chatService.deleteChat(user.participants[i].chat.idx);
+      } else {
+        await this.chatParticipantService.leaveChat(
+          userIdx,
+          user.participants[i].chat.idx,
+        );
+      }
+    }
     if (user) {
       await this.userService.deleteByIdx(userIdx);
     }
