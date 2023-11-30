@@ -122,6 +122,13 @@ export class GameGateway
       if (!data) {
         throw new UnauthorizedException('Unauthorized access');
       }
+
+      const requester = await this.userService.getIsInclueGame(data.user_idx);
+      if (requester.include) {
+        socket.emit('error');
+        return;
+      }
+
       if (body.mode === 'normal') {
         NormalWaitingQueue.push([socket, data.user_idx]);
         if (NormalWaitingQueue.length >= 2) {
