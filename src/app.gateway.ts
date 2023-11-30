@@ -54,7 +54,8 @@ export class appGateway
   }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
-    const token = socket.handshake.auth.token || socket.handshake.query.token;
+    // const token = socket.handshake.auth.token || socket.handshake.query.token;
+    const token = socket.handshake.auth.token;
     const userData = await this.authService.parsingJwtData(token);
     const userIdx = userData.user_idx;
     this.onlineUsers[userIdx] = socket.id;
@@ -66,7 +67,7 @@ export class appGateway
     }
     this.logger.log('connected : ' + socket.id + ' in appGateway');
 
-    const token = socket.handshake.auth.token;
+    // const token = socket.handshake.auth.token;
     if (token) {
       try {
         const decoded = await this.authService.parsingJwtData(token.toString());
