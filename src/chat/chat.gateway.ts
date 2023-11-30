@@ -21,6 +21,7 @@ import CreateChatDto from './dto/chat.create.dto';
 import { ChatMessage } from './chat.message.entity';
 import { Server } from 'socket.io';
 import { UserService } from 'src/user/user.service';
+import UpdateChatDto from './dto/chat.update.dto';
 
 interface IChat {
   idx: number;
@@ -107,6 +108,24 @@ export class ChatGateway
       }
       this.chatService.joinChatRoom(socket, `room-${chat.idx}`);
       return { status: 'success', chatIdx: chat.idx };
+    } catch (error) {
+      return { status: 'error', message: error.message };
+    }
+  }
+
+  @SubscribeMessage('updateChat')
+  async updateChat(
+    @MessageBody() body: UpdateChatDto,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const chatIdx = body.chatIdx;
+    const password = body.password;
+
+    console.log('=>', chatIdx, password);
+
+    try {
+      const chat = await this.chatService.updateChat(chatIdx, password);
+      return { status: 'success', chat: chat };
     } catch (error) {
       return { status: 'error', message: error.message };
     }
