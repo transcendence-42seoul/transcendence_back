@@ -33,15 +33,18 @@ export class UserService {
     private blockRepository: BlockRepository,
   ) {}
 
-  async findOrCreateUser(userData: any): Promise<User> {
+  async findOrCreateUser(
+    userData: any,
+  ): Promise<{ user: User; created: boolean }> {
     const user = await this.userRepository.findOne({
       where: { id: userData.login },
     });
-    if (user) return user;
+    if (user) return { user, created: false };
     else {
       const userDto = UserDto.convertDto(userData);
 
-      return await this.signup(userDto);
+      const newUser = await this.signup(userDto);
+      return { user: newUser, created: true };
     }
   }
 

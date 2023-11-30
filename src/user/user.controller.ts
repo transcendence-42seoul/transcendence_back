@@ -65,7 +65,7 @@ export class UserController {
   }
 
   @Patch('/:idx/nickname')
-  async updateUsername(
+  async updateNickname(
     @Param('idx', ParseIntPipe) idx: number,
     @Body('nickname') nickname: string,
   ): Promise<User> {
