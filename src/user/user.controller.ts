@@ -51,6 +51,7 @@ export class UserController {
 
   @Get('/idx/:idx')
   async findByIdx(@Param('idx') idx: number) {
+    console.log('here');
     return await this.userService.findByIdx(idx);
   }
 
