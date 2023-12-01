@@ -249,4 +249,16 @@ export class ChatGateway
       return { status: 'error', message: error.message };
     }
   }
+
+  @SubscribeMessage('leaveDm')
+  async handleLeaveDm(
+    @MessageBody() room_id: number,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    try {
+      this.chatService.leaveChatRoom(socket, `room-${room_id}`);
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }
