@@ -254,13 +254,17 @@ export class GameGateway
 
       let count = COUNT_DOWN_TIME;
       this.server.to(game.room_id).emit('countDown', count);
-      const countDownInterval = setInterval(() => {
+      const countDownInterval = setInterval(async () => {
         count--;
         this.server.to(game.room_id).emit('countDown', count);
         if (count === 0) {
           clearInterval(countDownInterval);
           this.start(game.room_id, gameMode);
-          this.userService.updateStatus(hostData.idx, UserStatus.PLAYING);
+          await this.userService.updateStatus(hostData.idx, UserStatus.PLAYING);
+          await this.userService.updateStatus(
+            guestData.idx,
+            UserStatus.PLAYING,
+          );
         }
       }, 1000);
       this.logger.log(
@@ -285,7 +289,7 @@ export class GameGateway
     );
   }
 
-  update(roomId: string) {
+  async update(roomId: string) {
     GameStore[roomId].update();
     if (GameStore[roomId].over === true) {
       this.server.emit('getGameData', GameStore[roomId].getGameData());
@@ -297,7 +301,7 @@ export class GameGateway
         GameStore[roomId].host.score > GameStore[roomId].guest.score
           ? 'host'
           : 'guest';
-      this.gameService.finishGame(roomId, winner);
+      await this.gameService.finishGame(roomId, winner);
       delete GameStore[roomId];
       this.server.emit('endGame');
     } else {
