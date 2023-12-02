@@ -130,11 +130,9 @@ export class appGateway
   }
 
   @SubscribeMessage('cancelChallengeGame')
-  async cancelChallengeGame(
-    @MessageBody() body: { requestedIdx: number },
-    @ConnectedSocket() socket: Socket,
-  ) {
-    onlineUsers[body.requestedIdx].emit('cancelChallengeGame');
+  async cancelChallengeGame(@MessageBody() body: { requestedIdx: number }) {
+    if (onlineUsers[body.requestedIdx])
+      onlineUsers[body.requestedIdx].emit('cancelChallengeGame');
   }
 
   async getUserIdx(socket: Socket) {
