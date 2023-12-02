@@ -6,6 +6,7 @@ import { UserRepository } from 'src/user/user.repository';
 import { Role } from '../chat.participant.entity';
 import { BadRequestException } from '@nestjs/common';
 import { ChatParticipantService } from '../chat.participant.service';
+import { In } from 'typeorm';
 
 @Injectable()
 export class KickService {
@@ -58,17 +59,17 @@ export class KickService {
       );
     }
 
-    const owners = await this.chatParticipantRepository.find({
-      where: { chat: { idx: chatIdx }, role: Role.OWNER },
+    const managers = await this.chatParticipantRepository.find({
+      where: { chat: { idx: chatIdx }, role: In([Role.OWNER, Role.ADMIN]) },
       relations: ['user'],
     });
-    const ownerIdxs = owners.map((owner) => owner.user.idx);
+    const managersIdx = managers.map((manager) => manager.user.idx);
 
-    if (!ownerIdxs.includes(kickerIdx)) {
-      throw new BadRequestException('You are not owner of this chat');
+    if (!managersIdx.includes(kickerIdx)) {
+      throw new BadRequestException('You are not manager of this chat');
     }
-    if (ownerIdxs.includes(kickedIdx)) {
-      throw new BadRequestException('You cannot kick owner of this chat');
+    if (managersIdx.includes(kickedIdx)) {
+      throw new BadRequestException('You cannot kick manager of this chat');
     }
 
     await this.chatParticipantService.leaveChat(kickedIdx, chatIdx);

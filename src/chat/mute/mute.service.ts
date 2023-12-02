@@ -10,6 +10,7 @@ import { ChatParticipantRepository } from '../chat.participant.repository';
 import { Role } from '../chat.participant.entity';
 import { UserRepository } from 'src/user/user.repository';
 import { User } from 'src/user/user.entity';
+import { In } from 'typeorm';
 
 @Injectable()
 export class MuteService {
@@ -78,16 +79,16 @@ export class MuteService {
       );
     }
 
-    const owners = await this.chatParticipantRepository.find({
-      where: { chat: { idx: chatIdx }, role: Role.OWNER },
+    const managers = await this.chatParticipantRepository.find({
+      where: { chat: { idx: chatIdx }, role: In([Role.OWNER, Role.ADMIN]) },
       relations: ['user'],
     });
-    const ownerIdxs = owners.map((owner) => owner.user.idx);
-    if (!ownerIdxs.includes(muterIdx)) {
-      throw new BadRequestException('You are not owner of this chat');
+    const managersIdx = managers.map((manager) => manager.user.idx);
+    if (!managersIdx.includes(muterIdx)) {
+      throw new BadRequestException('You are not manager of this chat');
     }
-    if (ownerIdxs.includes(mutedIdx)) {
-      throw new BadRequestException('You cannot mute owner of this chat');
+    if (managersIdx.includes(mutedIdx)) {
+      throw new BadRequestException('You cannot mute manager of this chat');
     }
 
     await this.muteRepository.createMute(chatIdx, mutedIdx);
@@ -115,17 +116,17 @@ export class MuteService {
       throw new NotFoundException(`User with idx "${mutedIdx}" not found`);
     }
 
-    const owners = await this.chatParticipantRepository.find({
-      where: { chat: { idx: chatIdx }, role: Role.OWNER },
+    const managers = await this.chatParticipantRepository.find({
+      where: { chat: { idx: chatIdx }, role: In([Role.OWNER, Role.ADMIN]) },
       relations: ['user'],
     });
-    const ownerIdxs = owners.map((owner) => owner.user.idx);
-    if (!ownerIdxs.includes(muterIdx)) {
-      throw new BadRequestException('You are not owner of this chat');
+    const managersIdx = managers.map((manager) => manager.user.idx);
+    if (!managersIdx.includes(muterIdx)) {
+      throw new BadRequestException('You are not manager of this chat');
     }
-    if (ownerIdxs.includes(mutedIdx)) {
+    if (managersIdx.includes(mutedIdx)) {
       throw new BadRequestException(
-        'You cannot delete mute owner of this chat',
+        'You cannot delete mute manager of this chat',
       );
     }
 

@@ -22,14 +22,13 @@ import { ChatMessage } from './chat.message.entity';
 import { Server } from 'socket.io';
 import { UserService } from 'src/user/user.service';
 import { KickService } from './kick/kick.service';
-import { KickChatDto } from './dto/kick.chat.dto';
 import UpdateChatDto from './dto/chat.update.dto';
-import { MuteChatDto } from './dto/mute.chat.dto';
 import { MuteService } from './mute/mute.service';
 import { appGateway } from 'src/app.gateway';
-import { BanChatDto } from './dto/ban.chat.dto';
+import { UserManagementDto } from './dto/user.manage.dto';
 import { BanService } from './ban/ban.service';
 import { onlineUsers } from 'src/app.gateway';
+import { Role } from './chat.participant.entity';
 
 interface IChat {
   idx: number;
@@ -91,7 +90,6 @@ export class ChatGateway
     const userData = await this.authService.parsingJwtData(token);
     const userIdx = userData.user_idx;
 
-    console.log('hanndleConnection');
     this.chatUsers[userIdx] = socket.id;
 
     if (token) {
@@ -316,19 +314,15 @@ export class ChatGateway
   @SubscribeMessage('kick')
   async handleKick(
     @ConnectedSocket() socket: Socket,
-    @MessageBody() body: KickChatDto,
+    @MessageBody() body: UserManagementDto,
   ) {
     console.log(body);
-    const chatIdx = body.chatIdx;
-    const kickedIdx = body.kickedIdx;
+    const chatIdx = parseInt(body.chatIdx);
+    const kickedIdx = body.managedIdx;
     const kickerIdx = socket.data.userIdx;
 
     try {
-      await this.kickService.kickParticipant(
-        parseInt(chatIdx),
-        kickerIdx,
-        kickedIdx,
-      );
+      await this.kickService.kickParticipant(chatIdx, kickerIdx, kickedIdx);
       // const kickedSocketId = this.chatUsers[kickedIdx];
       // console.log('chatUsers', this.chatUsers);
       // console.log('kickedSocketId', kickedSocketId);
@@ -346,15 +340,15 @@ export class ChatGateway
   @SubscribeMessage('ban')
   async handleBan(
     @ConnectedSocket() socket: Socket,
-    @MessageBody() body: BanChatDto,
+    @MessageBody() body: UserManagementDto,
   ) {
-    const chatIdx = body.chatIdx;
-    const bannedIdx = body.bannedIdx;
+    const chatIdx = parseInt(body.chatIdx);
+    const bannedIdx = body.managedIdx;
     const bannerIdx = socket.data.userIdx;
     console.log('ban', chatIdx, bannedIdx, bannerIdx);
 
     try {
-      await this.banService.banUser(parseInt(chatIdx), bannerIdx, bannedIdx);
+      await this.banService.banUser(chatIdx, bannerIdx, bannedIdx);
       const bannedSocketId = onlineUsers[bannedIdx].id;
       this.appGateway.server.to(bannedSocketId).emit('banned', chatIdx);
     } catch (error) {
@@ -368,15 +362,15 @@ export class ChatGateway
   @SubscribeMessage('mute')
   async handleMute(
     @ConnectedSocket() socket: Socket,
-    @MessageBody() body: MuteChatDto,
+    @MessageBody() body: UserManagementDto,
   ) {
-    const chatIdx = body.chatIdx;
-    const mutedIdx = body.mutedIdx;
+    const chatIdx = parseInt(body.chatIdx);
+    const mutedIdx = body.managedIdx;
     const muterIdx = socket.data.userIdx;
     console.log('mute', chatIdx, mutedIdx, muterIdx);
 
     try {
-      await this.muteService.muteUser(parseInt(chatIdx), muterIdx, mutedIdx);
+      await this.muteService.muteUser(chatIdx, muterIdx, mutedIdx);
       // 전체 소켓 처리
       // muted user의 socket id를 찾아서 mutedIdx를 보내줌
       const targetUser = onlineUsers[mutedIdx].id;
@@ -399,6 +393,85 @@ export class ChatGateway
       this.chatService.leaveChatRoom(socket, `room-${room_id}`);
     } catch (error) {
       console.log(error);
+    }
+  }
+
+  @SubscribeMessage('grant')
+  async handleGrant(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() body: UserManagementDto,
+  ) {
+    const chatIdx = parseInt(body.chatIdx);
+    const room = `room-${chatIdx}`;
+    const grantedIdx = body.managedIdx;
+    console.log('body', body);
+    console.log('grant', chatIdx, grantedIdx);
+
+    try {
+      await this.chatParticipantService.updateRole(
+        grantedIdx,
+        chatIdx,
+        Role.ADMIN,
+      );
+
+      const participants =
+        await this.chatParticipantService.getChatParticipants(chatIdx);
+
+      const filteredParticipants = participants.map((participant) => ({
+        idx: participant.idx,
+        role: participant.role,
+        user: {
+          idx: participant.user.idx,
+          nickname: participant.user.nickname,
+        },
+      }));
+
+      this.server
+        .to(room)
+        .emit('receiveChatParticipants', filteredParticipants);
+
+      return { status: 'success' };
+    } catch (error) {
+      return { status: 'error', message: error.message };
+    }
+  }
+
+  @SubscribeMessage('revoke')
+  async handleRevoke(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() body: UserManagementDto,
+  ) {
+    const chatIdx = parseInt(body.chatIdx);
+    const room = `room-${chatIdx}`;
+    const revokedIdx = body.managedIdx;
+    console.log('revoke', chatIdx, revokedIdx);
+
+    try {
+      await this.chatParticipantService.updateRole(
+        revokedIdx,
+        chatIdx,
+        Role.USER,
+      );
+
+      const participants =
+        await this.chatParticipantService.getChatParticipants(chatIdx);
+
+      const filteredParticipants = participants.map((participant) => ({
+        idx: participant.idx,
+        role: participant.role,
+        user: {
+          idx: participant.user.idx,
+          nickname: participant.user.nickname,
+        },
+      }));
+
+      this.server
+        .to(room)
+        .emit('receiveChatParticipants', filteredParticipants);
+
+      return { status: 'success' };
+    } catch (error) {
+      return { status: 'error', message: error.message };
     }
   }
 }

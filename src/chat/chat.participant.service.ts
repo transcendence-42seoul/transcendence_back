@@ -223,4 +223,22 @@ export class ChatParticipantService {
       }
     }
   }
+
+  async updateRole(
+    userIdx: number,
+    chatIdx: number,
+    role: Role,
+  ): Promise<void> {
+    const participant = await this.chatParticipantRepository.findOne({
+      where: { user: { idx: userIdx }, chat: { idx: chatIdx } },
+    });
+    if (!participant)
+      throw new NotFoundException(
+        `Participant with idx "${userIdx}" not found in chat "${chatIdx}"`,
+      );
+
+    participant.role = role;
+
+    await this.chatParticipantRepository.save(participant);
+  }
 }

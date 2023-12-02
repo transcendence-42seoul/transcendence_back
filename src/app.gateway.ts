@@ -82,6 +82,21 @@ export class appGateway
     }
   }
 
+  @SubscribeMessage('requestOnlineUsers')
+  async sendOnlineUsers(@ConnectedSocket() socket: Socket) {
+    const onlineUserListPromises = Object.keys(onlineUsers).map(async (key) => {
+      const user = await this.userService.findByIdx(parseInt(key));
+      return {
+        idx: parseInt(key),
+        nickname: user.nickname,
+      };
+    });
+
+    const onlineUserList = await Promise.all(onlineUserListPromises);
+
+    this.server.emit('onlineUsers', onlineUserList);
+  }
+
   // 챌린지 도전자 신청
   @SubscribeMessage('checkEnableChallengeGame')
   async checkEnableChallengeGame(
