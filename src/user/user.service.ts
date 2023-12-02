@@ -111,6 +111,16 @@ export class UserService {
     return true;
   }
 
+  async getNickname(idx: number): Promise<string> {
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .select(['user.nickname'])
+      .where('user.idx = :idx', { idx })
+      .getOne();
+    if (!user) throw new NotFoundException(`User with idx ${idx} not found`);
+    return user.nickname;
+  }
+
   async updateUsername(idx: number, nickname: string): Promise<User> {
     const user = await this.userRepository.findOne({ where: { idx } });
     if (!user) throw new NotFoundException(`user with idx ${idx} not found`);
@@ -143,24 +153,12 @@ export class UserService {
     }
   }
 
-  async getStatusById(id: string): Promise<UserStatus> {
+  async getIsInclueGame(idx: number) {
     const user = await this.userRepository.findOne({
-      where: { id },
-      select: ['status'],
-    });
-    if (!user) throw new NotFoundException(`User with id ${id} not found`);
-    return user.status;
-  }
-
-  async getIsInclueGame(
-    id: string,
-  ): Promise<{ include: boolean; status: UserStatus }> {
-    const user = await this.userRepository.findOne({
-      where: { id },
-      select: ['host', 'guest', 'status'],
+      where: { idx },
     });
     if (user.host || user.guest) return { include: true, status: user.status };
-    return { include: true, status: user.status };
+    return { include: false, status: user.status };
   }
 
   async updateStatus(idx: number, status: UserStatus): Promise<User> {
@@ -195,3 +193,12 @@ export class UserService {
     }
   }
 }
+
+//  // 챌린지 수락자 수락 == 게임 생성 + 챌린지 도전자에게 게임 시작 알림 + 챌린지 수락자에게 게임 시작 알림 + 게임 생성하고 game 정보 뿌리기
+//  @SubscribeMessage('requestedAcceptChallengeGame')
+//  async acceptChallengeGame(
+//    @MessageBody() body: { requesterId: string; requestedId: string },
+//    @ConnectedSocket() socket: Socket,
+//  ) {}
+
+//  // 챌릭지 도전자 취소

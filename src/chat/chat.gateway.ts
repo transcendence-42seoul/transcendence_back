@@ -29,6 +29,7 @@ import { MuteService } from './mute/mute.service';
 import { appGateway } from 'src/app.gateway';
 import { BanChatDto } from './dto/ban.chat.dto';
 import { BanService } from './ban/ban.service';
+import { onlineUsers } from 'src/app.gateway';
 
 interface IChat {
   idx: number;
@@ -216,7 +217,7 @@ export class ChatGateway
       return { status: 'success' };
     } catch (error) {
       if (error.message === `User "${userIdx}" are banned in this chat`) {
-        const bannedSocketId = this.appGateway.onlineUsers[userIdx];
+        const bannedSocketId = onlineUsers[userIdx].id;
         this.appGateway.server.to(bannedSocketId).emit('isBan');
       }
       return { status: 'error', message: error.message };
@@ -332,7 +333,7 @@ export class ChatGateway
       // console.log('chatUsers', this.chatUsers);
       // console.log('kickedSocketId', kickedSocketId);
       // socket.to(kickedSocketId).emit('kicked', chatIdx);
-      const kickedSocketId = this.appGateway.onlineUsers[kickedIdx];
+      const kickedSocketId = onlineUsers[kickedIdx].id;
       this.appGateway.server.to(kickedSocketId).emit('kicked', chatIdx);
     } catch (error) {
       socket.emit('showError', {
@@ -354,7 +355,7 @@ export class ChatGateway
 
     try {
       await this.banService.banUser(parseInt(chatIdx), bannerIdx, bannedIdx);
-      const bannedSocketId = this.appGateway.onlineUsers[bannedIdx];
+      const bannedSocketId = onlineUsers[bannedIdx].id;
       this.appGateway.server.to(bannedSocketId).emit('banned', chatIdx);
     } catch (error) {
       socket.emit('showError', {
@@ -378,9 +379,7 @@ export class ChatGateway
       await this.muteService.muteUser(parseInt(chatIdx), muterIdx, mutedIdx);
       // 전체 소켓 처리
       // muted user의 socket id를 찾아서 mutedIdx를 보내줌
-      const onlineUsers = this.appGateway.onlineUsers;
-      console.log('onlineUsers', onlineUsers);
-      const targetUser = this.appGateway.onlineUsers[mutedIdx];
+      const targetUser = onlineUsers[mutedIdx].id;
       console.log('targetUser', targetUser);
       //
     } catch (error) {
@@ -388,6 +387,18 @@ export class ChatGateway
         message: error.message,
       });
       return;
+    }
+  }
+
+  @SubscribeMessage('leaveDm')
+  async handleLeaveDm(
+    @MessageBody() room_id: number,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    try {
+      this.chatService.leaveChatRoom(socket, `room-${room_id}`);
+    } catch (error) {
+      console.log(error);
     }
   }
 }
