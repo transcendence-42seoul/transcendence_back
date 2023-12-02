@@ -18,6 +18,11 @@ import { Role } from './chat/chat.participant.entity';
 import { ChatService } from './chat/chat.service';
 import { UserRepository } from './user/user.repository';
 import { ChatParticipantService } from './chat/chat.participant.service';
+
+export const onlineUsers: {
+  [key: number]: Socket;
+} = {};
+
 @WebSocketGateway({ namespace: 'appGateway' })
 export class appGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
@@ -32,10 +37,6 @@ export class appGateway
     private readonly chatParticipantService: ChatParticipantService,
   ) {}
 
-  onlineUsers: {
-    [key: number]: string;
-  } = {};
-
   afterInit() {}
 
   private logger = new Logger('app');
@@ -44,7 +45,7 @@ export class appGateway
     const token = socket.handshake.auth.token || socket.handshake.query.token;
     const userData = await this.authService.parsingJwtData(token);
     const userIdx = userData.user_idx;
-    delete this.onlineUsers[userIdx];
+    delete onlineUsers[userIdx];
 
     try {
       await this.userService.updateStatus(userIdx, UserStatus.OFFLINE);
@@ -55,11 +56,10 @@ export class appGateway
   }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
-    // const token = socket.handshake.auth.token || socket.handshake.query.token;
     const token = socket.handshake.auth.token;
     const userData = await this.authService.parsingJwtData(token);
     const userIdx = userData.user_idx;
-    this.onlineUsers[userIdx] = socket.id;
+    onlineUsers[userIdx] = socket;
 
     try {
       await this.userService.updateStatus(userIdx, UserStatus.ONLINE);
@@ -68,7 +68,6 @@ export class appGateway
     }
     this.logger.log('connected : ' + socket.id + ' in appGateway');
 
-    // const token = socket.handshake.auth.token;
     if (token) {
       try {
         const decoded = await this.authService.parsingJwtData(token.toString());
@@ -86,10 +85,9 @@ export class appGateway
   // 챌린지 도전자 신청
   @SubscribeMessage('checkEnableChallengeGame')
   async checkEnableChallengeGame(
-    @MessageBody() body: { requestedIdx: number },
+    @MessageBody() body: { requestedIdx: number; gameMode: 'normal' | 'hard' },
     @ConnectedSocket() socket: Socket,
   ) {
-    console.log('제발!!!');
     try {
       const userIdx = await this.getUserIdx(socket);
       const requester = await this.userService.getIsInclueGame(userIdx);
@@ -111,8 +109,12 @@ export class appGateway
         });
         const nickname = await this.userService.getNickname(userIdx);
         this.server
-          .to(this.onlineUsers[body.requestedIdx])
-          .emit('requestedChallenge', { nickname });
+          .to(onlineUsers[body.requestedIdx].id)
+          .emit('requestedChallenge', {
+            nickname,
+            requesterIdx: userIdx,
+            gameMode: body.gameMode,
+          });
       } else if (
         requested.status === UserStatus.OFFLINE ||
         requested.status === UserStatus.PLAYING
@@ -127,8 +129,16 @@ export class appGateway
     }
   }
 
+  @SubscribeMessage('cancelChallengeGame')
+  async cancelChallengeGame(
+    @MessageBody() body: { requestedIdx: number },
+    @ConnectedSocket() socket: Socket,
+  ) {
+    onlineUsers[body.requestedIdx].emit('cancelChallengeGame');
+  }
+
   async getUserIdx(socket: Socket) {
-    const token = socket.handshake.auth.token || socket.handshake.query.token;
+    const token = socket.handshake.auth.token;
     const userData = await this.authService.parsingJwtData(token);
     const userIdx = userData.user_idx;
     return userIdx;
