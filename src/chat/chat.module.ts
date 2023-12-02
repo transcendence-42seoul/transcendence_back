@@ -23,12 +23,18 @@ import { AvatarRepository } from 'src/avatar/avatar.repository';
 import { FriendRequestRepository } from 'src/friend/friend.request.repository';
 import { FriendRequestPairRepository } from 'src/friend/friend.request.pair.repository';
 import { BlockRepository } from 'src/block/block.repository';
+import { KickService } from './kick/kick.service';
+import { MuteService } from './mute/mute.service';
+import { appGateway } from 'src/app.gateway';
+import { GameModule } from 'src/game/game.module';
+import { BanService } from './ban/ban.service';
 
 @Module({
   imports: [
     AuthModule,
     HttpModule,
     TypeOrmModule.forFeature([Chat, ChatParticipant, ChatMessage]),
+    GameModule,
   ],
   controllers: [ChatController],
   providers: [
@@ -49,6 +55,10 @@ import { BlockRepository } from 'src/block/block.repository';
     UserService,
     UserRepository,
     ChatGateway,
+    appGateway,
+    KickService,
+    BanService,
+    MuteService,
   ],
   exports: [ChatService, ChatParticipantService],
 })
