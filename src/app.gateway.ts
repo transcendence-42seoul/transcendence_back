@@ -18,6 +18,7 @@ import { Role } from './chat/chat.participant.entity';
 import { ChatService } from './chat/chat.service';
 import { UserRepository } from './user/user.repository';
 import { ChatParticipantService } from './chat/chat.participant.service';
+
 @WebSocketGateway({ namespace: 'appGateway' })
 export class appGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
@@ -54,7 +55,8 @@ export class appGateway
   }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
-    const token = socket.handshake.auth.token || socket.handshake.query.token;
+    // const token = socket.handshake.auth.token || socket.handshake.query.token;
+    const token = socket.handshake.auth.token;
     const userData = await this.authService.parsingJwtData(token);
     const userIdx = userData.user_idx;
     this.onlineUsers[userIdx] = socket.id;
@@ -66,7 +68,7 @@ export class appGateway
     }
     this.logger.log('connected : ' + socket.id + ' in appGateway');
 
-    const token = socket.handshake.auth.token;
+    // const token = socket.handshake.auth.token;
     if (token) {
       try {
         const decoded = await this.authService.parsingJwtData(token.toString());

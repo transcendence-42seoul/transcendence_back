@@ -83,16 +83,17 @@ export class ChatParticipantService {
       where: { chat: { idx: chatIdx } },
       relations: ['banned'],
     });
+    // console.log('bannedParticipant', bannedParticipant);
 
     const isBanned = bannedParticipant.some(
       (ban) => ban.banned.idx === userIdx,
     );
+    console.log('isBanned', isBanned);
     if (isBanned) {
       throw new BadRequestException(
         `User "${userIdx}" are banned in this chat`,
       );
     }
-
     // block (check with blocker)
     const owner = await this.chatParticipantRepository.findOne({
       where: { chat: { idx: chatIdx }, role: Role.OWNER },
