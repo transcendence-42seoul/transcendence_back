@@ -18,6 +18,7 @@ import { KyeEvent, KyeEventDto } from './dto/key.event.dto';
 import { CGame, DIRECTION } from './game.engine';
 import { GameMode, GameModeType } from './entities/game.entity';
 import { UserStatus } from 'src/user/user.entity';
+import { onlineUsers } from 'src/app.gateway';
 
 const COUNT_DOWN_TIME = 5;
 
@@ -122,6 +123,13 @@ export class GameGateway
       if (!data) {
         throw new UnauthorizedException('Unauthorized access');
       }
+
+      const requester = await this.userService.getIsInclueGame(data.user_idx);
+      if (requester.include) {
+        socket.emit('error');
+        return;
+      }
+
       if (body.mode === 'normal') {
         NormalWaitingQueue.push([socket, data.user_idx]);
         if (NormalWaitingQueue.length >= 2) {
@@ -159,6 +167,8 @@ export class GameGateway
     } catch (error) {
       socket.emit('error', error.message);
     }
+
+    console.log(NormalWaitingQueue);
   }
   @SubscribeMessage('cancelLadderQueue')
   cancelLadderQueue(
@@ -181,6 +191,38 @@ export class GameGateway
       }
     }
     this.logger.log(socket.id + ' cancel waiting  ladder queue');
+  }
+
+  @SubscribeMessage('acceptChallengeGame')
+  async acceptChallenge(
+    @MessageBody() body: { requesterIdx: number; gameMode: 'normal' | 'hard' },
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const requestedIdx = await this.getUserIdx(socket);
+
+    const gameStatus = {
+      gameMode:
+        body.gameMode === 'normal'
+          ? GameMode.CHALLENGE_NORMAL
+          : GameMode.CHALLENGE_HARD,
+      hostData: {
+        socket: onlineUsers[body.requesterIdx],
+        idx: body.requesterIdx,
+      },
+      guestData: {
+        socket: onlineUsers[requestedIdx],
+        idx: requestedIdx,
+      },
+    };
+    try {
+      await this.createMatch(
+        gameStatus.gameMode,
+        gameStatus.hostData,
+        gameStatus.guestData,
+      );
+    } catch (error) {
+      this.logger.error('챌린지 게임 생성 실패');
+    }
   }
 
   async createMatch(
@@ -209,8 +251,6 @@ export class GameGateway
       });
       hostData.socket.emit('createGameSuccess', game);
       guestData.socket.emit('createGameSuccess', game);
-      hostData.socket.join(game.room_id);
-      guestData.socket.join(game.room_id);
 
       let count = COUNT_DOWN_TIME;
       this.server.to(game.room_id).emit('countDown', count);
@@ -224,7 +264,7 @@ export class GameGateway
         }
       }, 1000);
       this.logger.log(
-        `create game ${hostData.idx}, ${guestData.idx}} in ${game.room_id}`,
+        `create game ${hostData.idx}, ${guestData.idx} in ${game.room_id}`,
       );
     } catch (error) {
       throw Error("can't create game");
@@ -317,5 +357,12 @@ export class GameGateway
     if (roomId === undefined) return;
     this.logger.log('new_chat : ' + chat + ' in ' + roomId);
     socket.broadcast.to(roomId).emit('receiveMessage', chat); // 자신을 제외한 모든 소켓에게 메시지를 보낸다. (자신에게는 보내지 않는다.)
+  }
+
+  async getUserIdx(socket: Socket) {
+    const token = socket.handshake.auth.token;
+    const userData = await this.authService.parsingJwtData(token);
+    const userIdx = userData.user_idx;
+    return userIdx;
   }
 }
