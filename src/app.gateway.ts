@@ -60,14 +60,12 @@ export class appGateway
     const userData = await this.authService.parsingJwtData(token);
     const userIdx = userData.user_idx;
     onlineUsers[userIdx] = socket;
-
     try {
       await this.userService.updateStatus(userIdx, UserStatus.ONLINE);
     } catch (error) {
       this.logger.error(`${userIdx}의 offline 업데이트 실패`);
     }
-    this.logger.log('connected : ' + socket.id + ' in appGateway');
-
+    this.logger.log('connected : ' + socket.id + ' in appGateway ' + userIdx);
     if (token) {
       try {
         const decoded = await this.authService.parsingJwtData(token.toString());
@@ -179,7 +177,6 @@ export class appGateway
 
     for (let i = 0; i < user.participants.length; i++) {
       if (user.participants[i].role === Role.OWNER) {
-        console.log(user.participants[i].chat.idx);
         await this.chatService.deleteChat(user.participants[i].chat.idx);
       } else {
         await this.chatParticipantService.leaveChat(
