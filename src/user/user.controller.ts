@@ -12,6 +12,7 @@ import { UserService } from './user.service';
 import { UserDto } from './dto/user.dto';
 import { UserStatusValidationPipe } from './pipes/user-status.validation.pipe';
 import { TFASecret, User, UserStatus } from './user.entity';
+import { OnlineUserDto } from './dto/online.user.dto';
 
 @Controller('users')
 export class UserController {
@@ -101,5 +102,10 @@ export class UserController {
   @Delete('/:idx')
   async deleteByIdx(@Param('idx', ParseIntPipe) idx: number) {
     await this.userService.deleteByIdx(idx);
+  }
+
+  @Get('/online')
+  async getOnlineUsers(): Promise<OnlineUserDto[]> {
+    return this.userService.getOnlineUsers();
   }
 }

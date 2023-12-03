@@ -53,6 +53,18 @@ export class appGateway
       this.logger.error(`${userIdx}의 offline 업데이트 실패`);
     }
     this.logger.log('disconnected : ' + socket.id + ' in appGateway');
+
+    const onlineUserListPromises = Object.keys(onlineUsers).map(async (key) => {
+      const user = await this.userService.findByIdx(parseInt(key));
+      return {
+        idx: parseInt(key),
+        nickname: user.nickname,
+      };
+    });
+
+    const onlineUserList = await Promise.all(onlineUserListPromises);
+
+    this.server.emit('onlineUsers', onlineUserList);
   }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
@@ -78,10 +90,7 @@ export class appGateway
       this.logger.error('No token provided');
       socket.disconnect();
     }
-  }
 
-  @SubscribeMessage('requestOnlineUsers')
-  async sendOnlineUsers(@ConnectedSocket() socket: Socket) {
     const onlineUserListPromises = Object.keys(onlineUsers).map(async (key) => {
       const user = await this.userService.findByIdx(parseInt(key));
       return {

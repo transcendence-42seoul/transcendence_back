@@ -13,6 +13,7 @@ import { TFASecret, User, UserStatus } from './user.entity';
 import { FriendRequestPairRepository } from 'src/friend/friend.request.pair.repository';
 import { FriendRequestRepository } from 'src/friend/friend.request.repository';
 import { BlockRepository } from 'src/block/block.repository';
+import { OnlineUserDto } from './dto/online.user.dto';
 
 @Injectable()
 export class UserService {
@@ -191,6 +192,18 @@ export class UserService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async getOnlineUsers(): Promise<OnlineUserDto[]> {
+    const users = await this.userRepository.find({
+      where: { status: UserStatus.ONLINE },
+    });
+
+    const onlineUsers = users.map((user) => {
+      return OnlineUserDto.convertDto(user);
+    });
+
+    return onlineUsers;
   }
 }
 
