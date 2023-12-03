@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ChatController } from './chat.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatService } from './chat.service';
@@ -25,16 +25,17 @@ import { FriendRequestPairRepository } from 'src/friend/friend.request.pair.repo
 import { BlockRepository } from 'src/block/block.repository';
 import { KickService } from './kick/kick.service';
 import { MuteService } from './mute/mute.service';
-import { appGateway } from 'src/app.gateway';
 import { GameModule } from 'src/game/game.module';
 import { BanService } from './ban/ban.service';
+import { AppModule } from 'src/app.module';
 
 @Module({
   imports: [
     AuthModule,
     HttpModule,
     TypeOrmModule.forFeature([Chat, ChatParticipant, ChatMessage]),
-    GameModule,
+    forwardRef(() => GameModule), // forwardRef 사용
+    forwardRef(() => AppModule), // forwardRef 사용
   ],
   controllers: [ChatController],
   providers: [
@@ -55,7 +56,6 @@ import { BanService } from './ban/ban.service';
     UserService,
     UserRepository,
     ChatGateway,
-    appGateway,
     KickService,
     BanService,
     MuteService,
