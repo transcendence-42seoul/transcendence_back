@@ -133,6 +133,7 @@ export class ChatGateway
         );
       }
       this.chatService.joinChatRoom(socket, `room-${chat.idx}`);
+      this.appGateway.server.emit('chatRoomCreated', chat);
       return { status: 'success', chatIdx: chat.idx };
     } catch (error) {
       return { status: 'error', message: error.message };
@@ -151,6 +152,7 @@ export class ChatGateway
 
     try {
       const chat = await this.chatService.updateChat(chatIdx, password);
+      this.appGateway.server.emit('chatRoomUpdated', chat);
       return { status: 'success', chat: chat };
     } catch (error) {
       return { status: 'error', message: error.message };
@@ -284,6 +286,7 @@ export class ChatGateway
       if (owner.length === 0) {
         console.log('aaaaaa');
         this.server.to(room).emit('ownerLeaveChat', chatIdx);
+        this.appGateway.server.emit('chatRoomDeleted', chatIdx);
         await this.chatService.deleteChat(chatIdx);
       }
 
