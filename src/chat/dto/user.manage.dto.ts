@@ -1,11 +1,11 @@
 import { IsInt, IsNotEmpty, IsString } from 'class-validator';
 
-export class BanChatDto {
+export class UserManagementDto {
   @IsNotEmpty()
   @IsString()
   chatIdx: string;
 
   @IsNotEmpty()
   @IsInt()
-  bannedIdx: number;
+  managedIdx: number;
 }

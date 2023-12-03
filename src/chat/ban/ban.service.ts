@@ -11,6 +11,7 @@ import { Role } from '../chat.participant.entity';
 import { UserRepository } from 'src/user/user.repository';
 import { User } from 'src/user/user.entity';
 import { ChatParticipantService } from '../chat.participant.service';
+import { In } from 'typeorm';
 
 @Injectable()
 export class BanService {
@@ -80,16 +81,16 @@ export class BanService {
       );
     }
 
-    const owners = await this.chatParticipantRepository.find({
-      where: { chat: { idx: chatIdx }, role: Role.OWNER },
+    const managers = await this.chatParticipantRepository.find({
+      where: { chat: { idx: chatIdx }, role: In([Role.OWNER, Role.ADMIN]) },
       relations: ['user'],
     });
-    const ownerIdxs = owners.map((owner) => owner.user.idx);
-    if (!ownerIdxs.includes(bannerIdx)) {
-      throw new BadRequestException('You are not owner of this chat');
+    const managersIdx = managers.map((managers) => managers.user.idx);
+    if (!managersIdx.includes(bannerIdx)) {
+      throw new BadRequestException('You are not manager of this chat');
     }
-    if (ownerIdxs.includes(bannedIdx)) {
-      throw new BadRequestException('You cannot ban owner of this chat');
+    if (managersIdx.includes(bannedIdx)) {
+      throw new BadRequestException('You cannot ban manager of this chat');
     }
 
     await this.banRepository.createBan(chatIdx, bannedIdx);
