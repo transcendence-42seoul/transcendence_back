@@ -16,6 +16,7 @@ export class RecordRepository extends Repository<Record> {
       ladder_win: 0,
       general_game: 0,
       general_win: 0,
+      // user_game_log: [],
     });
 
     await this.save(record);

@@ -33,7 +33,12 @@ export class GameService {
     return game;
   }
 
-  async finishGame(roomId: string, winner: 'host' | 'guest') {
+  async finishGame(
+    roomId: string,
+    winner: 'host' | 'guest',
+    host_score: number,
+    guest_score: number,
+  ) {
     const game = await this.gameRepository.findOne({
       where: { room_id: roomId },
     });
@@ -68,13 +73,36 @@ export class GameService {
       gameGuest.record.general_game += 1;
       gameWinner.record.general_win += 1;
     }
-    // game.game_status = false;
-
     try {
       await this.recordService.updateRecord(gameHost.idx, gameHost.record);
       await this.recordService.updateRecord(gameGuest.idx, gameGuest.record);
       await this.userService.updateStatus(gameHost.idx, UserStatus.ONLINE);
       await this.userService.updateStatus(gameGuest.idx, UserStatus.ONLINE);
+    } catch (error) {
+      this.logger.error(error);
+    }
+    const hostGameHistory = {
+      win: winner === 'host' ? true : false,
+      game_type: game.game_mode,
+      my_score: host_score,
+      opponent_score: guest_score,
+      opponent_id: gameGuest.id,
+      opponent_nickname: gameGuest.nickname,
+      time: game.start_time,
+    };
+    const guestGameHistory = {
+      win: winner === 'guest' ? true : false,
+      game_type: game.game_mode,
+      my_score: guest_score,
+      opponent_score: host_score,
+      time: game.start_time,
+      opponent_id: gameHost.id,
+      opponent_nickname: gameHost.nickname,
+    };
+
+    try {
+      this.recordService.addGameHistory(gameHost.idx, hostGameHistory);
+      this.recordService.addGameHistory(gameGuest.idx, guestGameHistory);
     } catch (error) {
       this.logger.error(error);
     }

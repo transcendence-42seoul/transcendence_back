@@ -1,4 +1,5 @@
 import { Column } from 'typeorm';
+import { IGameHistory } from '../record.entity';
 
 export class RecordDto {
   @Column({ nullable: false })
@@ -19,6 +20,9 @@ export class RecordDto {
   @Column({ nullable: false })
   general_win: number;
 
+  @Column('text', { array: true })
+  user_game_log: IGameHistory[];
+
   static convertDto(userData: any): RecordDto {
     const recordDto = new RecordDto();
     recordDto.total_game = userData.total_game;
@@ -27,6 +31,7 @@ export class RecordDto {
     recordDto.ladder_win = userData.ladder_win;
     recordDto.general_game = userData.general_game;
     recordDto.general_win = userData.general_win;
+    // recordDto.user_game_log = [];
     return recordDto;
   }
 }
