@@ -8,6 +8,8 @@ import { FriendRequestPair } from './friend.request.pair.entity';
 import { UserRepository } from 'src/user/user.repository';
 import { FriendRequestPairRepository } from './friend.request.pair.repository';
 import { BlockRepository } from 'src/block/block.repository';
+import { AlarmService } from 'src/alarm/alarm.service';
+import { AlarmRepository } from 'src/alarm/alarm.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([FriendRequest, FriendRequestPair])],
@@ -18,6 +20,9 @@ import { BlockRepository } from 'src/block/block.repository';
     FriendRequestPairRepository,
     UserRepository,
     BlockRepository,
+    AlarmService,
+    AlarmRepository,
   ],
+  exports: [FriendService],
 })
 export class FriendModule {}

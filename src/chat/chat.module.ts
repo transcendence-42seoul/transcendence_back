@@ -28,6 +28,7 @@ import { MuteService } from './mute/mute.service';
 import { GameModule } from 'src/game/game.module';
 import { BanService } from './ban/ban.service';
 import { AppModule } from 'src/app.module';
+import { BlockService } from 'src/block/block.service';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { AppModule } from 'src/app.module';
     ChatGateway,
     KickService,
     BanService,
+    BlockService,
     MuteService,
   ],
   exports: [ChatService, ChatParticipantService],
