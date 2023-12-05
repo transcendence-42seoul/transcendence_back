@@ -30,7 +30,7 @@ export class AuthController {
   //42Oauth
   @Get('oauth/42/authorize')
   async loginWith42() {
-    const clientId = `u-s4t2ud-decaba972e71347060f602c587ad21a8158074daa139ecd5dad4dc9faec4f603`;
+    const clientId = process.env.FORTYTWO_CLIENT_ID;
     const redirectUrl = `http://localhost:3000/auth/oauth/42/callback`;
     const url = `https://api.intra.42.fr/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUrl}&response_type=code`;
     return { url };
