@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { RecordRepository } from './record.repository';
 import { UserRepository } from 'src/user/user.repository';
-import { Record } from './record.entity';
+import { IGameHistory, Record } from './record.entity';
 import { RecordDto, LadderRecordDto, GeneralRecordDto } from './dto/record.dto';
 
 @Injectable()
@@ -115,5 +115,18 @@ export class RecordService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async addGameHistory(userIdx: number, history: IGameHistory) {
+    const user = await this.userRepository.findOne({
+      where: { idx: userIdx },
+    });
+    if (!user) {
+      throw new Error('User Record not found');
+    }
+    if (!user.record.user_game_log)
+      user.record.user_game_log = new Array<IGameHistory>();
+    user.record.user_game_log.push(history);
+    await this.recordRepository.save(user.record);
   }
 }

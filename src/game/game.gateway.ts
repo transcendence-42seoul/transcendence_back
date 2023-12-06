@@ -301,7 +301,12 @@ export class GameGateway
         GameStore[roomId].host.score > GameStore[roomId].guest.score
           ? 'host'
           : 'guest';
-      await this.gameService.finishGame(roomId, winner);
+      await this.gameService.finishGame(
+        roomId,
+        winner,
+        GameStore[roomId].host.score,
+        GameStore[roomId].guest.score,
+      );
       delete GameStore[roomId];
       this.server.emit('endGame');
     } else {
