@@ -433,16 +433,11 @@ export class appGateway
 
   @SubscribeMessage('block')
   async block(@MessageBody() body, @ConnectedSocket() socket: Socket) {
-    // const chatIdx = parseInt(body.chatIdx);
-    // const room = `room-${chatIdx}`;
     const blockerIdx = socket.data.userIdx;
     const blockedIdx = body.managedIdx;
-    console.log('1', blockerIdx, blockedIdx);
 
     try {
-      console.log('2', blockerIdx, blockedIdx);
       await this.blockService.blockUser(blockerIdx, blockedIdx);
-      console.log('3', blockerIdx, blockedIdx);
 
       const friendList = await this.friendService.getFriendList(blockerIdx);
       const isFriend = friendList.some((friend) => friend.idx === blockedIdx);
@@ -450,48 +445,51 @@ export class appGateway
         await this.friendService.deleteFriend(blockerIdx, blockedIdx);
       }
 
-      const blockedUsers = await this.blockService.getBlockList(blockerIdx);
+      // const blockedUsers = await this.blockService.getBlockList(blockerIdx);
 
       // const onlineUserListPromises = Object.keys(onlineUsers).map(
-      //   const userIdx = parseInt(key);
-
       //   async (key) => {
-      //     if (blockedUsers.some(parseInt(key))) {
-      //       return null; // 차단된 사용자는 제외
+      //     const userIdx = parseInt(key);
+      //     if (isNaN(userIdx)) {
+      //       // userIdx가 유효한 숫자가 아닌 경우 처리
+      //       return null;
       //     }
-      //     const user = await this.userService.findByIdx(parseInt(key));
+
+      //     if (blockedUsers.some((user) => user.idx === userIdx)) {
+      //       // 차단된 사용자는 제외
+      //       return null;
+      //     }
+
+      //     const user = await this.userService.findByIdx(userIdx);
       //     return {
-      //       idx: parseInt(key),
+      //       idx: userIdx,
       //       nickname: user.nickname,
       //     };
       //   },
       // );
-      const onlineUserListPromises = Object.keys(onlineUsers).map(
-        async (key) => {
-          const userIdx = parseInt(key);
-          if (isNaN(userIdx)) {
-            // userIdx가 유효한 숫자가 아닌 경우 처리
-            return null;
-          }
 
-          if (blockedUsers.some((user) => user.idx === userIdx)) {
-            // 차단된 사용자는 제외
-            return null;
-          }
-
-          const user = await this.userService.findByIdx(userIdx);
-          return {
-            idx: userIdx,
-            nickname: user.nickname,
-          };
-        },
-      );
-
-      const onlineUserList = await Promise.all(onlineUserListPromises);
-      this.server.emit('onlineUsers', onlineUserList);
-      // this.server.to(room).emit('block', blockedIdx);
+      // const onlineUserList = await Promise.all(onlineUserListPromises);
+      // this.server.emit('onlineUsers', onlineUserList);
     } catch (error) {
       console.log(error);
     }
+  }
+
+  @SubscribeMessage('unblock')
+  async unblock(@MessageBody() body, @ConnectedSocket() socket: Socket) {
+    // const chatIdx = parseInt(body.chatIdx);
+    // const room = `room-${chatIdx}`;
+    const blockerIdx = socket.data.userIdx;
+    const blockedIdx = body.managedIdx;
+
+    try {
+      await this.blockService.unBlockUser(blockerIdx, blockedIdx);
+    } catch (error) {
+      console.log(error);
+    }
+
+    const blockedUsers = await this.blockService.getBlockList(blockerIdx);
+
+    this.server.emit('receiveblockedUsers', blockedUsers);
   }
 }

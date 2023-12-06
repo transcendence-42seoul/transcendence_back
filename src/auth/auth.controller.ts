@@ -64,8 +64,11 @@ export class AuthController {
       res.cookie('token', newToken, { sameSite: 'lax' });
 
       console.log('created', created);
-      if (created == false) res.redirect('http://localhost:5173/main');
-      else res.redirect('http://localhost:5173/avatar-setting');
+      if (created == false) {
+        if (user.tfa_enabled)
+          res.redirect('http://localhost:5173/authentication');
+        else res.redirect('http://localhost:5173/main');
+      } else res.redirect('http://localhost:5173/avatar-setting');
     } catch (error) {
       console.log('error', error);
       res.status(500).send('Internal Server Error');
@@ -122,7 +125,7 @@ export class AuthController {
     try {
       const user = await this.userService.findByIdx(idx);
 
-      if (user.tfa_enabled) {
+      if (user.tfa_enabled == false) {
         await this.userService.updateTFA(idx, false, null);
         return { message: 'TFA is successfully disabled' };
       } else {
