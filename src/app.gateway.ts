@@ -307,6 +307,34 @@ export class appGateway
           .to(onlineUsers[requestedIdx].id)
           .emit('notificationList', alarmDtos);
       }
+
+      const friendList = await this.friendService.getFriendList(requestedIdx);
+      const friendDtos = friendList.map((friend) => {
+        return {
+          idx: friend.idx,
+          nickname: friend.nickname,
+          profileImage: friend.avatar.image_data,
+        };
+      });
+
+      if (onlineUsers[requestedIdx].id) {
+        this.server
+          .to(onlineUsers[requestedIdx].id)
+          .emit('updateFriendList', friendDtos);
+
+        this.server
+          .to(onlineUsers[requestedIdx].id)
+          .emit('receiveFriendUsers', friendDtos);
+      }
+      if (onlineUsers[notification.sender_idx].id) {
+        this.server
+          .to(onlineUsers[notification.sender_idx].id)
+          .emit('updateFriendList', friendDtos);
+
+        this.server
+          .to(onlineUsers[notification.sender_idx].id)
+          .emit('receiveFriendUsers', friendDtos);
+      }
     } catch (error) {
       console.log(error);
     }
@@ -342,6 +370,46 @@ export class appGateway
       }
     } catch (error) {
       console.log(error);
+    }
+  }
+
+  @SubscribeMessage('deleteFriend')
+  async deleteFriend(@MessageBody() body, @ConnectedSocket() socket: Socket) {
+    const userIdx = socket.data.userIdx;
+    const friendIdx = body.friendIdx;
+
+    try {
+      await this.friendService.deleteFriend(userIdx, friendIdx);
+    } catch (error) {
+      console.log(error);
+    }
+
+    const friendList = await this.friendService.getFriendList(userIdx);
+    const friendDtos = friendList.map((friend) => {
+      return {
+        idx: friend.idx,
+        nickname: friend.nickname,
+        profileImage: friend.avatar.image_data,
+      };
+    });
+
+    if (onlineUsers[userIdx].id) {
+      this.server
+        .to(onlineUsers[userIdx].id)
+        .emit('updateFriendList', friendDtos);
+
+      this.server
+        .to(onlineUsers[userIdx].id)
+        .emit('receiveFriendUsers', friendDtos);
+    }
+    if (onlineUsers[friendIdx].id) {
+      this.server
+        .to(onlineUsers[friendIdx].id)
+        .emit('updateFriendList', friendDtos);
+
+      this.server
+        .to(onlineUsers[friendIdx].id)
+        .emit('receiveFriendUsers', friendDtos);
     }
   }
 

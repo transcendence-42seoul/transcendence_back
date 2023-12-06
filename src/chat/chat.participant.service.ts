@@ -146,12 +146,12 @@ export class ChatParticipantService {
     }));
   }
 
-  async getChatOwner(chatIdx: number): Promise<ChatParticipant[]> {
+  async getChatOwner(chatIdx: number): Promise<ChatParticipant> {
     const chat = await this.chatRepository.findOne({ where: { idx: chatIdx } });
     if (!chat)
       throw new NotFoundException(`Chat with idx "${chatIdx}" not found`);
 
-    return await this.chatParticipantRepository.find({
+    return await this.chatParticipantRepository.findOne({
       where: { chat: { idx: chatIdx }, role: Role.OWNER },
       relations: ['user'],
     });
