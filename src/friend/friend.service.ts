@@ -9,6 +9,8 @@ import { UserRepository } from 'src/user/user.repository';
 import { User } from 'src/user/user.entity';
 import { FriendRequestPairRepository } from './friend.request.pair.repository';
 import { BlockRepository } from 'src/block/block.repository';
+import { AlarmService } from 'src/alarm/alarm.service';
+import { FriendRequest } from './friend.request.entity';
 
 @Injectable()
 export class FriendService {
@@ -21,6 +23,7 @@ export class FriendService {
     private friendRequestPairRepository: FriendRequestPairRepository,
     @InjectRepository(BlockRepository)
     private blockRepository: BlockRepository,
+    private alarmService: AlarmService,
   ) {}
 
   async allowFriend(idx1: number, idx2: number): Promise<void> {
@@ -44,7 +47,10 @@ export class FriendService {
     this.friendRequestPairRepository.save(pair);
   }
 
-  async requestFriend(requesterIdx: number, requestedIdx: number) {
+  async requestFriend(
+    requesterIdx: number,
+    requestedIdx: number,
+  ): Promise<FriendRequest> {
     const requesterUser = await this.userRepository.findOne({
       where: { idx: requesterIdx },
     });
@@ -68,27 +74,22 @@ export class FriendService {
     if (blockedUsers.length === 1)
       throw new BadRequestException('Blocked user');
 
-    const friendRequest = await this.friendRequestRepository.findOne({
-      where: [
-        {
-          requester: { idx: requesterIdx },
-          requested: { idx: requestedIdx },
-        },
-        {
-          requester: { idx: requestedIdx },
-          requested: { idx: requesterIdx },
-        },
-      ],
-      relations: ['requester', 'requested'],
-    });
-    if (friendRequest) {
-      return { message: 'Friend request already sent' };
-    }
-
     let idx1 = requesterIdx;
     let idx2 = requestedIdx;
     if (idx1 > idx2) {
       [idx2, idx1] = [idx1, idx2];
+    }
+
+    const friendRequestPair = await this.friendRequestPairRepository.findOne({
+      where: [
+        {
+          user1: idx1,
+          user2: idx2,
+        },
+      ],
+    });
+    if (friendRequestPair !== null) {
+      throw new BadRequestException('Friend request pair already exists');
     }
 
     const pair = await this.friendRequestPairRepository.createFriendRequestPair(
@@ -96,13 +97,11 @@ export class FriendService {
       idx2,
     );
 
-    await this.friendRequestRepository.createFriendRequest(
+    return await this.friendRequestRepository.createFriendRequest(
       requesterUser,
       requestedUser,
       pair,
     );
-
-    return { message: 'Friend request sent' };
   }
 
   async getFriendList(idx: number): Promise<User[]> {

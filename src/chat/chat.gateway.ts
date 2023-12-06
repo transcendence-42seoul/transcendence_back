@@ -219,6 +219,9 @@ export class ChatGateway
       if (error.message === `User "${userIdx}" are banned in this chat`) {
         const bannedSocketId = onlineUsers[userIdx].id;
         this.appGateway.server.to(bannedSocketId).emit('isBan');
+      } else if (error.message === `You are blocked by owner`) {
+        const blockedSocketId = onlineUsers[userIdx].id;
+        this.appGateway.server.to(blockedSocketId).emit('isBan');
       }
       return { status: 'error', message: error.message };
     }
@@ -471,6 +474,45 @@ export class ChatGateway
       this.server
         .to(room)
         .emit('receiveChatParticipants', filteredParticipants);
+
+      return { status: 'success' };
+    } catch (error) {
+      return { status: 'error', message: error.message };
+    }
+  }
+
+  @SubscribeMessage('blockChatMember')
+  async BlockChatMember(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() body: UserManagementDto,
+  ) {
+    const chatIdx = parseInt(body.chatIdx);
+    const room = `room-${chatIdx}`;
+    const blockedIdx = body.managedIdx;
+    console.log('blockChatMember', chatIdx, blockedIdx);
+
+    try {
+      await this.chatParticipantService.leaveChat(blockedIdx, chatIdx);
+
+      const participants =
+        await this.chatParticipantService.getChatParticipants(chatIdx);
+
+      const filteredParticipants = participants.map((participant) => ({
+        idx: participant.idx,
+        role: participant.role,
+        user: {
+          idx: participant.user.idx,
+          nickname: participant.user.nickname,
+        },
+      }));
+
+      this.server
+        .to(room)
+        .emit('receiveChatParticipants', filteredParticipants);
+
+      const blockedSockedId = onlineUsers[blockedIdx].id;
+
+      this.appGateway.server.to(blockedSockedId).emit('banned', chatIdx);
 
       return { status: 'success' };
     } catch (error) {

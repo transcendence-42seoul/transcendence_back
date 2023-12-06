@@ -16,6 +16,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Mute } from 'src/chat/mute/mute.entity';
+import { Alarm } from 'src/alarm/alarm.entity';
 
 export enum UserStatus {
   ONLINE = 'ONLINE',
@@ -50,6 +51,11 @@ export class User extends BaseEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   tfa_secret: TFASecret;
+
+  @OneToMany(() => Alarm, (alarm) => alarm.receiver, {
+    eager: true,
+  })
+  alarm: Alarm[];
 
   @OneToOne(() => Avatar, (avatar) => avatar.user, {
     eager: true,
@@ -95,13 +101,13 @@ export class User extends BaseEntity {
     eager: true,
   })
   // @JoinColumn({ name: 'game_host' })
-  host: Game;
+  host: Game[];
 
   @OneToOne(() => Game, (game) => game.game_guest, {
     eager: true,
   })
   // @JoinColumn({ name: 'game_guest' })
-  guest: Game;
+  guest: Game[];
 
   @OneToMany(() => ChatParticipant, (chatParticipant) => chatParticipant.user, {
     eager: true,

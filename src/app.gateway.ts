@@ -11,13 +11,18 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { GameService } from './game/game.service';
-import { Logger, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Logger, NotFoundException } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { UserStatus } from 'src/user/user.entity';
 import { Role } from './chat/chat.participant.entity';
 import { ChatService } from './chat/chat.service';
 import { UserRepository } from './user/user.repository';
 import { ChatParticipantService } from './chat/chat.participant.service';
+import { FriendService } from './friend/friend.service';
+import { AlarmDto } from './alarm/dto/alarm.dto';
+import { AlarmType } from './alarm/alarm.entity';
+import { AlarmService } from './alarm/alarm.service';
+import { BlockService } from './block/block.service';
 
 export const onlineUsers: {
   [key: number]: Socket;
@@ -33,6 +38,9 @@ export class appGateway
     private readonly authService: AuthService,
     private readonly userService: UserService,
     private readonly chatService: ChatService,
+    private readonly friendService: FriendService,
+    private readonly alarmService: AlarmService,
+    private readonly blockService: BlockService,
     private readonly userRepository: UserRepository,
     private readonly chatParticipantService: ChatParticipantService,
   ) {}
@@ -211,6 +219,279 @@ export class appGateway
     }
     if (user) {
       await this.userService.deleteByIdx(userIdx);
+    }
+  }
+
+  @SubscribeMessage('friendRequest')
+  async friendRequest(
+    @MessageBody() receiverIdx: number,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const senderIdx = socket.data.userIdx;
+    const sender = await this.userService.findByIdx(senderIdx);
+    if (!sender) {
+      throw new NotFoundException('존재하지 않는 유저입니다.');
+    }
+
+    const receiver = await this.userService.findByIdx(receiverIdx);
+    if (!receiver) {
+      throw new NotFoundException('존재하지 않는 유저입니다.');
+    }
+
+    try {
+      await this.friendService.requestFriend(senderIdx, receiverIdx);
+
+      const alarmDto = AlarmDto.convertDto(
+        senderIdx,
+        `${sender.nickname}님이 친구 요청을 보냈습니다.`,
+        AlarmType.FREIND_REQUEST,
+      );
+
+      const alarm = await this.alarmService.createAlarm(receiverIdx, alarmDto);
+
+      alarmDto.idx = alarm.idx;
+
+      if (onlineUsers[receiverIdx].id) {
+        this.server
+          .to(onlineUsers[receiverIdx].id)
+          .emit('notification', alarmDto);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  @SubscribeMessage('acceptFriendRequest')
+  async acceptFirendRequest(
+    @MessageBody() notificationIdx: number,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    try {
+      const requestedIdx = socket.data.userIdx;
+      const notification = await this.alarmService.findByIdx(notificationIdx);
+      if (!notification) {
+        throw new NotFoundException('존재하지 않는 알림입니다.');
+      }
+      const requested = await this.userService.findByIdx(requestedIdx);
+      if (!requested) {
+        throw new NotFoundException('존재하지 않는 유저입니다.');
+      }
+      await this.friendService.allowFriendRequest(
+        notification.sender_idx,
+        requestedIdx,
+      );
+
+      const alarmDto = AlarmDto.convertDto(
+        requestedIdx,
+        `${requested.nickname}님이 친구 요청을 수락했습니다.`,
+        AlarmType.GENERAL,
+      );
+
+      await this.alarmService.createAlarm(notification.sender_idx, alarmDto);
+
+      if (onlineUsers[notification.sender_idx].id) {
+        this.server
+          .to(onlineUsers[notification.sender_idx].id)
+          .emit('notification', alarmDto);
+      }
+
+      await this.alarmService.deleteAlarm(notificationIdx);
+
+      const alarms = await this.alarmService.getAlarms(requestedIdx);
+      const alarmDtos = alarms.map((alarm) => {
+        AlarmDto.fromEntity(alarm);
+      });
+
+      if (onlineUsers[requestedIdx].id) {
+        this.server
+          .to(onlineUsers[requestedIdx].id)
+          .emit('notificationList', alarmDtos);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  @SubscribeMessage('declineFriendRequest')
+  async declineFriendRequest(
+    @MessageBody() notificationIdx: number,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    try {
+      const requestedIdx = socket.data.userIdx;
+      const notification = await this.alarmService.findByIdx(notificationIdx);
+      if (!notification) {
+        throw new NotFoundException('존재하지 않는 알림입니다.');
+      }
+      const requested = await this.userService.findByIdx(requestedIdx);
+      if (!requested) {
+        throw new NotFoundException('존재하지 않는 유저입니다.');
+      }
+
+      await this.alarmService.deleteAlarm(notificationIdx);
+
+      const alarms = await this.alarmService.getAlarms(requestedIdx);
+      const alarmDtos = alarms.map((alarm) => {
+        AlarmDto.fromEntity(alarm);
+      });
+
+      if (onlineUsers[requestedIdx].id) {
+        this.server
+          .to(onlineUsers[requestedIdx].id)
+          .emit('notificationList', alarmDtos);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  @SubscribeMessage('dmNotification')
+  async dmNotification(
+    @MessageBody() idx: string,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    if (idx === undefined) throw new BadRequestException('idx가 없습니다.');
+    const room_id = parseInt(idx);
+    const chat = await this.chatService.getChatByIdx(room_id);
+    if (!chat) {
+      throw new NotFoundException('존재하지 않는 채팅방입니다.');
+    }
+    if (chat.type !== 'DM') {
+      throw new NotFoundException('DM 채팅방이 아닙니다.');
+    }
+
+    const senderIdx = socket.data.userIdx;
+    const sender = await this.userService.findByIdx(senderIdx);
+    if (!sender) {
+      throw new NotFoundException('존재하지 않는 유저입니다.');
+    }
+
+    const participants =
+      await this.chatParticipantService.getChatParticipants(room_id);
+
+    const receiver = participants.filter(
+      (participant) => participant.user.idx !== senderIdx,
+    );
+    if (receiver.length === 0) {
+      throw new NotFoundException('DM 채팅방에 참여한 유저가 없습니다.');
+    }
+    const receiverIdx = receiver[0].user.idx;
+    if (!receiverIdx) {
+      throw new NotFoundException('존재하지 않는 유저입니다.');
+    }
+
+    try {
+      const alarmDto = AlarmDto.convertDto(
+        senderIdx,
+        `${sender.nickname}님이 DM을 보냈습니다.`,
+        AlarmType.DM,
+      );
+
+      const alarm = await this.alarmService.createAlarm(receiverIdx, alarmDto);
+
+      alarmDto.idx = alarm.idx;
+      alarmDto.room_idx = room_id;
+
+      if (onlineUsers[receiverIdx].id) {
+        this.server
+          .to(onlineUsers[receiverIdx].id)
+          .emit('notification', alarmDto);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  @SubscribeMessage('generalNotification')
+  async generalNotification(
+    @MessageBody() idx: number,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    try {
+      const userIdx = socket.data.userIdx;
+      const user = await this.userService.findByIdx(userIdx);
+      if (!user) {
+        throw new NotFoundException('존재하지 않는 유저입니다.');
+      }
+
+      await this.alarmService.deleteAlarm(idx);
+
+      const alarms = await this.alarmService.getAlarms(userIdx);
+      const alarmDtos = alarms.map((alarm) => {
+        AlarmDto.fromEntity(alarm);
+      });
+
+      if (onlineUsers[userIdx].id) {
+        this.server
+          .to(onlineUsers[userIdx].id)
+          .emit('notificationList', alarmDtos);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  @SubscribeMessage('block')
+  async block(@MessageBody() body, @ConnectedSocket() socket: Socket) {
+    // const chatIdx = parseInt(body.chatIdx);
+    // const room = `room-${chatIdx}`;
+    const blockerIdx = socket.data.userIdx;
+    const blockedIdx = body.managedIdx;
+    console.log('1', blockerIdx, blockedIdx);
+
+    try {
+      console.log('2', blockerIdx, blockedIdx);
+      await this.blockService.blockUser(blockerIdx, blockedIdx);
+      console.log('3', blockerIdx, blockedIdx);
+
+      const friendList = await this.friendService.getFriendList(blockerIdx);
+      const isFriend = friendList.some((friend) => friend.idx === blockedIdx);
+      if (isFriend) {
+        await this.friendService.deleteFriend(blockerIdx, blockedIdx);
+      }
+
+      const blockedUsers = await this.blockService.getBlockList(blockerIdx);
+
+      // const onlineUserListPromises = Object.keys(onlineUsers).map(
+      //   const userIdx = parseInt(key);
+
+      //   async (key) => {
+      //     if (blockedUsers.some(parseInt(key))) {
+      //       return null; // 차단된 사용자는 제외
+      //     }
+      //     const user = await this.userService.findByIdx(parseInt(key));
+      //     return {
+      //       idx: parseInt(key),
+      //       nickname: user.nickname,
+      //     };
+      //   },
+      // );
+      const onlineUserListPromises = Object.keys(onlineUsers).map(
+        async (key) => {
+          const userIdx = parseInt(key);
+          if (isNaN(userIdx)) {
+            // userIdx가 유효한 숫자가 아닌 경우 처리
+            return null;
+          }
+
+          if (blockedUsers.some((user) => user.idx === userIdx)) {
+            // 차단된 사용자는 제외
+            return null;
+          }
+
+          const user = await this.userService.findByIdx(userIdx);
+          return {
+            idx: userIdx,
+            nickname: user.nickname,
+          };
+        },
+      );
+
+      const onlineUserList = await Promise.all(onlineUserListPromises);
+      this.server.emit('onlineUsers', onlineUserList);
+      // this.server.to(room).emit('block', blockedIdx);
+    } catch (error) {
+      console.log(error);
     }
   }
 }

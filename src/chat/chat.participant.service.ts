@@ -115,13 +115,6 @@ export class ChatParticipantService {
       }
     }
 
-    const blockByParticipant = user.blocker;
-    for (let i = 0; i < blockByParticipant.length; i++) {
-      if (blockByParticipant[i].blocked === owner.user.idx) {
-        throw new BadRequestException(`You are blocked by participant`);
-      }
-    }
-
     if (chat.currentParticipant >= chat.limit)
       throw new BadRequestException(`Chat with idx "${chatIdx}" is full`);
 
@@ -213,13 +206,6 @@ export class ChatParticipantService {
     for (let i = 0; i < blockByOwner.length; i++) {
       if (blockByOwner[i].blocked === user.idx) {
         throw new BadRequestException(`You are blocked by owner`);
-      }
-    }
-
-    const blockByParticipant = user.blocker;
-    for (let i = 0; i < blockByParticipant.length; i++) {
-      if (blockByParticipant[i].blocked === owner.user.idx) {
-        throw new BadRequestException(`You are blocked by participant`);
       }
     }
   }

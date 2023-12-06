@@ -5,14 +5,15 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
-  OneToOne,
+  ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 export enum AlarmType {
   FREIND_REQUEST = 'friend_request',
   REQUEST_RESULT = 'request_result',
-  GAME_REQUEST = 'game_request',
+  DM = 'dm',
+  GENERAL = 'general',
 }
 
 @Entity()
@@ -20,9 +21,15 @@ export class Alarm extends BaseEntity {
   @PrimaryGeneratedColumn()
   idx: number;
 
-  @OneToOne(() => User)
-  @JoinColumn({ name: 'user_idx', referencedColumnName: 'idx' })
-  user_idx: number;
+  @ManyToOne(() => User, (user) => user.alarm, {
+    eager: false,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'receiver' })
+  receiver: User; // 받는 사람
+
+  @Column({ nullable: false })
+  sender_idx: number; // 보내는 사람
 
   @Column({ type: 'text', nullable: false })
   content: string;
@@ -30,9 +37,6 @@ export class Alarm extends BaseEntity {
   @CreateDateColumn()
   timeStamp: Date;
 
-  @Column({ nullable: true })
+  @Column({ nullable: false })
   type: AlarmType;
-
-  @Column({ nullable: true })
-  isChecked: boolean;
 }
