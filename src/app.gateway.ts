@@ -120,6 +120,29 @@ export class appGateway
   ) {
     try {
       const userIdx = await this.getUserIdx(socket);
+
+      try {
+        const requesterBlockList =
+          await this.blockService.getBlockedList(userIdx);
+        if (requesterBlockList.includes(body.requestedIdx)) {
+          throw new BadRequestException('차단된 사용자입니다.');
+        }
+        const requestedBlockList = await this.blockService.getBlockedList(
+          body.requestedIdx,
+        );
+        if (requestedBlockList.includes(userIdx)) {
+          throw new BadRequestException('차단된 사용자입니다.');
+        }
+      } catch (error) {
+        console.log(error);
+        socket.emit('checkEnableChallengeGameSuccess', {
+          status: 'OFFLINE',
+          success: false,
+          block: true,
+        });
+        return;
+      }
+
       const requester = await this.userService.getIsInclueGame(userIdx);
       const requested = await this.userService.getIsInclueGame(
         body.requestedIdx,
@@ -128,6 +151,7 @@ export class appGateway
         socket.emit('checkEnableChallengeGameSuccess', {
           status: 'OFFLINE',
           success: false,
+          block: false,
         });
         return;
       }
@@ -136,6 +160,7 @@ export class appGateway
         socket.emit('checkEnableChallengeGameSuccess', {
           status: 'ONLINE',
           success: true,
+          block: false,
         });
         const nickname = await this.userService.getNickname(userIdx);
         this.server
@@ -152,6 +177,7 @@ export class appGateway
         socket.emit('checkEnableChallengeGameSuccess', {
           status: requested.status,
           success: false,
+          block: false,
         });
       }
     } catch (error) {
@@ -165,7 +191,7 @@ export class appGateway
       onlineUsers[body.requestedIdx].emit('cancelChallengeGame');
   }
 
-  async getUserIdx(socket: Socket) {
+  async getUserIdx(socket: Socket): Promise<number> {
     const token = socket.handshake.auth.token;
     const userData = await this.authService.parsingJwtData(token);
     const userIdx = userData.user_idx;
