@@ -134,7 +134,7 @@ export class appGateway
           throw new BadRequestException('차단된 사용자입니다.');
         }
       } catch (error) {
-        console.log(error);
+        this.logger.error(error.message);
         socket.emit('checkEnableChallengeGameSuccess', {
           status: 'OFFLINE',
           success: false,
@@ -181,7 +181,7 @@ export class appGateway
         });
       }
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(error.message);
     }
   }
 
@@ -283,7 +283,7 @@ export class appGateway
           .emit('notification', alarmDto);
       }
     } catch (error) {
-      Logger.error(error.message);
+      this.logger.error(error.message);
     }
   }
 
@@ -378,7 +378,7 @@ export class appGateway
           .emit('receiveFriendUsers', senderFriendDtos);
       }
     } catch (error) {
-      console.log(error);
+      this.logger.error(error.message);
     }
   }
 
@@ -411,7 +411,7 @@ export class appGateway
           .emit('notificationList', alarmDtos);
       }
     } catch (error) {
-      console.log(error);
+      this.logger.error(error.message);
     }
   }
 
@@ -423,7 +423,7 @@ export class appGateway
     try {
       await this.friendService.deleteFriend(userIdx, friendIdx);
     } catch (error) {
-      console.log(error);
+      this.logger.error(error.message);
     }
 
     const friendList = await this.friendService.getFriendList(userIdx);
@@ -508,7 +508,7 @@ export class appGateway
           .emit('notification', alarmDto);
       }
     } catch (error) {
-      Logger.error(error.message);
+      this.logger.error(error.message);
     }
   }
 
@@ -537,7 +537,7 @@ export class appGateway
           .emit('notificationList', alarmDtos);
       }
     } catch (error) {
-      console.log(error);
+      this.logger.error(error.message);
     }
   }
 
@@ -550,7 +550,10 @@ export class appGateway
       await this.blockService.blockUser(blockerIdx, blockedIdx);
 
       const friendList = await this.friendService.getFriendList(blockerIdx);
-      const isFriend = friendList.some((friend) => friend.idx === blockedIdx);
+      const isFriend = friendList.some(
+        (friend) => friend.idx === parseInt(blockedIdx),
+      );
+      this.logger.error(isFriend);
       if (isFriend) {
         await this.friendService.deleteFriend(blockerIdx, blockedIdx);
       }
@@ -585,7 +588,7 @@ export class appGateway
           .emit('updateFriendList', blockedFriendDtos);
       }
     } catch (error) {
-      console.log(error);
+      this.logger.error(error.message);
     }
   }
 
@@ -599,7 +602,7 @@ export class appGateway
     try {
       await this.blockService.unBlockUser(blockerIdx, blockedIdx);
     } catch (error) {
-      console.log(error);
+      this.logger.error(error.message);
     }
 
     const blockedUsers = await this.blockService.getBlockList(blockerIdx);

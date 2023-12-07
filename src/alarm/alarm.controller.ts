@@ -6,6 +6,7 @@ import {
   Body,
   Get,
   Delete,
+  Res,
 } from '@nestjs/common';
 import { AlarmService } from './alarm.service';
 import { AlarmDto } from './dto/alarm.dto';
@@ -19,8 +20,13 @@ export class AlarmController {
   async createAlarm(
     @Param('userIdx', ParseIntPipe) userIdx: number,
     @Body() alarmDto: AlarmDto,
+    @Res() res,
   ): Promise<Alarm> {
-    return this.alarmService.createAlarm(userIdx, alarmDto);
+    try {
+      return this.alarmService.createAlarm(userIdx, alarmDto);
+    } catch (error) {
+      res.status(400).send({ message: error.message });
+    }
   }
 
   @Get('/:userIdx')

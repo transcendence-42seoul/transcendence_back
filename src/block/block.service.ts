@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from 'src/user/user.repository';
 import { BlockRepository } from './block.repository';
@@ -102,5 +106,21 @@ export class BlockService {
     }
 
     return blockerList.map((user) => user.idx);
+  }
+
+  async checkBlock(userAIdx: number, userBIdx: number): Promise<boolean> {
+    try {
+      const requesterBlockList = await this.getBlockedList(userAIdx);
+      if (requesterBlockList.includes(userBIdx)) {
+        throw new BadRequestException('차단된 사용자입니다.');
+      }
+      const requestedBlockList = await this.getBlockedList(userBIdx);
+      if (requestedBlockList.includes(userAIdx)) {
+        throw new BadRequestException('차단된 사용자입니다.');
+      }
+      return false;
+    } catch (error) {
+      return true;
+    }
   }
 }

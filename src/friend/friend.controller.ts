@@ -6,6 +6,7 @@ import {
   Patch,
   Delete,
   Post,
+  Res,
 } from '@nestjs/common';
 import { FriendService } from './friend.service';
 
@@ -17,8 +18,14 @@ export class FriendController {
   async requestFriend(
     @Param('requesterIdx', ParseIntPipe) requesterIdx: number,
     @Param('requestedIdx', ParseIntPipe) requestedIdx: number,
+    @Res() res,
   ) {
-    return await this.friendService.requestFriend(requesterIdx, requestedIdx);
+    try {
+      await this.friendService.requestFriend(requesterIdx, requestedIdx);
+      res.status(200).json({ message: 'success' });
+    } catch (err) {
+      res.status(400).json({ message: 'fail' });
+    }
   }
 
   @Get('/:idx')

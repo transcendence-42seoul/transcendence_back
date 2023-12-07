@@ -7,6 +7,7 @@ import * as QRCode from 'qrcode';
 import { TFASecret } from 'src/user/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { LoginRequestDto } from './dto/login.request.dto';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class AuthService {
@@ -106,8 +107,7 @@ export class AuthService {
       const data = this.jwtService.verify(token);
       return data;
     } catch (error) {
-      console.log(error);
-      return null;
+      Logger.error(error.message);
     }
   }
 

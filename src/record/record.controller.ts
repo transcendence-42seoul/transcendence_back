@@ -28,7 +28,6 @@ export class RecordController {
       const user = await this.userService.findByIdx(idx);
       res.status(200).send(user.record);
     } catch (error) {
-      console.log(error.message);
       res.status(404).send(error.message);
     }
     return;
@@ -51,7 +50,6 @@ export class RecordController {
       const user = await this.userService.findByIdx(data.idx);
       res.status(200).send(user.record);
     } catch (error) {
-      console.log(error.message);
       res.status(401).send(error.message);
     }
   }
