@@ -520,7 +520,6 @@ export class appGateway
       });
 
       if (onlineUsers[userIdx].id) {
-        console.log(alarmDtos);
         this.server
           .to(onlineUsers[userIdx].id)
           .emit('notificationList', alarmDtos);

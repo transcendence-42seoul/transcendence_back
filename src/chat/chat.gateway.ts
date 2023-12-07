@@ -24,11 +24,11 @@ import { UserService } from 'src/user/user.service';
 import { KickService } from './kick/kick.service';
 import UpdateChatDto from './dto/chat.update.dto';
 import { MuteService } from './mute/mute.service';
-import { appGateway } from 'src/app.gateway';
 import { UserManagementDto } from './dto/user.manage.dto';
 import { BanService } from './ban/ban.service';
 import { onlineUsers } from 'src/app.gateway';
 import { Role } from './chat.participant.entity';
+import { appGateway } from 'src/app.gateway';
 
 interface IChat {
   idx: number;
@@ -55,7 +55,7 @@ export class ChatGateway
     private readonly kickService: KickService,
     private readonly banService: BanService,
     private readonly muteService: MuteService,
-    private readonly appGateway: appGateway,
+    private readonly AppGateway: appGateway,
   ) {}
   private logger = new Logger('chats'); // 테스트용 다쓰면 지워도 됨.
 
@@ -70,17 +70,6 @@ export class ChatGateway
     const userData = this.authService.parsingJwtData(token);
     const userIdx = userData.user_idx;
     delete this.chatUsers[userIdx];
-
-    // // 어떤방도 참여하지 않았을 경우
-    // if ([...socket.rooms.values()].length < 2) return;
-
-    // // 첫 번째 방은 클라이언트의 소켓 id에 해당하므로, 두 번째 방부터 처리
-    // // 클라이언트는 연결 시 자동으로 자신의 소켓 id와 동일한 이름의 방에 참여
-    // const rooms = [...socket.rooms.values()].slice(1);
-    // for (const roomId of rooms) {
-    //   if (roomId === undefined) return;
-    //   this.chatService.leaveChatRoom(socket, roomId);
-    // }
   }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
@@ -133,7 +122,7 @@ export class ChatGateway
         );
       }
       this.chatService.joinChatRoom(socket, `room-${chat.idx}`);
-      this.appGateway.server.emit('chatRoomCreated', chat);
+      this.AppGateway.server.emit('chatRoomCreated', chat);
       return { status: 'success', chatIdx: chat.idx };
     } catch (error) {
       return { status: 'error', message: error.message };
@@ -141,18 +130,13 @@ export class ChatGateway
   }
 
   @SubscribeMessage('updateChat')
-  async updateChat(
-    @MessageBody() body: UpdateChatDto,
-    @ConnectedSocket() socket: Socket,
-  ) {
+  async updateChat(@MessageBody() body: UpdateChatDto) {
     const chatIdx = body.chatIdx;
     const password = body.password;
 
-    console.log('=>', chatIdx, password);
-
     try {
       const chat = await this.chatService.updateChat(chatIdx, password);
-      this.appGateway.server.emit('chatRoomUpdated', chat);
+      this.AppGateway.server.emit('chatRoomUpdated', chat);
       return { status: 'success', chat: chat };
     } catch (error) {
       return { status: 'error', message: error.message };
@@ -184,7 +168,6 @@ export class ChatGateway
 
       if (!isParticipate) {
         if (chat.type === ChatType.PRIVATE) {
-          console.log('password', password);
           await this.chatParticipantService.joinPrivateChat(
             userIdx,
             chatIdx,
@@ -207,22 +190,19 @@ export class ChatGateway
         },
       }));
 
-      console.log(filteredParticipants);
-
       // 룸에 넣어줌
       this.chatService.joinChatRoom(socket, room);
       this.server
         .to(room)
         .emit('receiveChatParticipants', filteredParticipants);
-      console.log('join idx', room);
       return { status: 'success' };
     } catch (error) {
       if (error.message === `User "${userIdx}" are banned in this chat`) {
         const bannedSocketId = onlineUsers[userIdx].id;
-        this.appGateway.server.to(bannedSocketId).emit('isBan');
+        this.AppGateway.server.to(bannedSocketId).emit('isBan');
       } else if (error.message === `You are blocked by owner`) {
         const blockedSocketId = onlineUsers[userIdx].id;
-        this.appGateway.server.to(blockedSocketId).emit('isBan');
+        this.AppGateway.server.to(blockedSocketId).emit('isBan');
       } else {
         socket.emit('showError', {
           message: error.message,
@@ -237,13 +217,8 @@ export class ChatGateway
     @MessageBody() chatMessageDto: ChatMessageDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    console.log('sendMessage');
     const room = `room-${chatMessageDto.room_id}`;
     const message = chatMessageDto.message;
-
-    // console.log(chatMessageDto.room_id);
-    // console.log(socket.data.userIdx);
-    // console.log(message);
 
     try {
       const chatMessage: ChatMessage =
@@ -265,10 +240,7 @@ export class ChatGateway
         },
       };
 
-      // console.log(makeIChat);
       this.server.to(room).emit('receiveMessage', makeIChat);
-      // socket.emit('receiveMessage', makeIChat);
-      // socket.broadcast.to(room).emit('receiveMessage', makeIChat);
     } catch (error) {
       socket.emit('showError', {
         message: error.message,
@@ -282,7 +254,6 @@ export class ChatGateway
     @ConnectedSocket() socket: Socket,
   ) {
     const chatIdx = room_id;
-    console.log('chatIdx', chatIdx);
     const room = `room-${chatIdx}`;
     const userIdx = socket.data.userIdx;
 
@@ -292,7 +263,7 @@ export class ChatGateway
       const owner = await this.chatParticipantService.getChatOwner(chatIdx);
       if (!owner) {
         this.server.to(room).emit('ownerLeaveChat', chatIdx);
-        this.appGateway.server.emit('chatRoomDeleted', chatIdx);
+        this.AppGateway.server.emit('chatRoomDeleted', chatIdx);
         await this.chatService.deleteChat(chatIdx);
       }
 
@@ -307,8 +278,6 @@ export class ChatGateway
           nickname: participant.user.nickname,
         },
       }));
-
-      console.log('participant', participants);
 
       this.server
         .to(room)
@@ -325,19 +294,14 @@ export class ChatGateway
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: UserManagementDto,
   ) {
-    console.log(body);
     const chatIdx = parseInt(body.chatIdx);
     const kickedIdx = body.managedIdx;
     const kickerIdx = socket.data.userIdx;
 
     try {
       await this.kickService.kickParticipant(chatIdx, kickerIdx, kickedIdx);
-      // const kickedSocketId = this.chatUsers[kickedIdx];
-      // console.log('chatUsers', this.chatUsers);
-      // console.log('kickedSocketId', kickedSocketId);
-      // socket.to(kickedSocketId).emit('kicked', chatIdx);
       const kickedSocketId = onlineUsers[kickedIdx].id;
-      this.appGateway.server.to(kickedSocketId).emit('kicked', chatIdx);
+      this.AppGateway.server.to(kickedSocketId).emit('kicked', chatIdx);
     } catch (error) {
       socket.emit('showError', {
         message: error.message,
@@ -354,12 +318,11 @@ export class ChatGateway
     const chatIdx = parseInt(body.chatIdx);
     const bannedIdx = body.managedIdx;
     const bannerIdx = socket.data.userIdx;
-    console.log('ban', chatIdx, bannedIdx, bannerIdx);
 
     try {
       await this.banService.banUser(chatIdx, bannerIdx, bannedIdx);
       const bannedSocketId = onlineUsers[bannedIdx].id;
-      this.appGateway.server.to(bannedSocketId).emit('banned', chatIdx);
+      this.AppGateway.server.to(bannedSocketId).emit('banned', chatIdx);
     } catch (error) {
       socket.emit('showError', {
         message: error.message,
@@ -376,15 +339,9 @@ export class ChatGateway
     const chatIdx = parseInt(body.chatIdx);
     const mutedIdx = body.managedIdx;
     const muterIdx = socket.data.userIdx;
-    console.log('mute', chatIdx, mutedIdx, muterIdx);
 
     try {
       await this.muteService.muteUser(chatIdx, muterIdx, mutedIdx);
-      // 전체 소켓 처리
-      // muted user의 socket id를 찾아서 mutedIdx를 보내줌
-      const targetUser = onlineUsers[mutedIdx].id;
-      console.log('targetUser', targetUser);
-      //
     } catch (error) {
       socket.emit('showError', {
         message: error.message,
@@ -413,8 +370,6 @@ export class ChatGateway
     const chatIdx = parseInt(body.chatIdx);
     const room = `room-${chatIdx}`;
     const grantedIdx = body.managedIdx;
-    console.log('body', body);
-    console.log('grant', chatIdx, grantedIdx);
 
     try {
       await this.chatParticipantService.updateRole(
@@ -453,7 +408,6 @@ export class ChatGateway
     const chatIdx = parseInt(body.chatIdx);
     const room = `room-${chatIdx}`;
     const revokedIdx = body.managedIdx;
-    console.log('revoke', chatIdx, revokedIdx);
 
     try {
       await this.chatParticipantService.updateRole(
@@ -493,7 +447,6 @@ export class ChatGateway
     const room = `room-${chatIdx}`;
     const blockedIdx = body.managedIdx;
     const blockerIdx = socket.data.userIdx;
-    console.log('blockChatMember', chatIdx, blockedIdx);
 
     try {
       const owners = await this.chatParticipantService.getChatOwner(chatIdx);
@@ -518,7 +471,7 @@ export class ChatGateway
 
         const blockedSockedId = onlineUsers[blockedIdx].id;
 
-        this.appGateway.server.to(blockedSockedId).emit('banned', chatIdx);
+        this.AppGateway.server.to(blockedSockedId).emit('banned', chatIdx);
       }
 
       return { status: 'success' };

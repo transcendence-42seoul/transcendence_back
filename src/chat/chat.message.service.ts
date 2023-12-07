@@ -59,7 +59,6 @@ export class ChatMessageService {
     if (muteList) {
       for (const mute of muteList) {
         if (mute.muted.idx === userIdx && mute.unmute_timestamp > now) {
-          console.log('mute:', mute.muted.id, 'userIdx:', userIdx);
           throw new BadRequestException(
             `User with idx "${userIdx}" is muted in chat "${chatIdx}"`,
           );

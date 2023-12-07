@@ -33,7 +33,6 @@ export class AlarmService {
         sender_idx: alarmDto.sender_idx,
       },
     });
-    console.log('alarm', alarm);
     if (alarm) throw new BadRequestException('이미 알람이 존재합니다.');
 
     return this.alarmRepository.createAlarm(
@@ -68,7 +67,6 @@ export class AlarmService {
   }
 
   async deleteAlarm(alarmIdx: number) {
-    console.log('deleteAlarm');
     const alarm = await this.alarmRepository.findOne({
       where: { idx: alarmIdx },
     });

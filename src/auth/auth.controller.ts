@@ -38,13 +38,6 @@ export class AuthController {
 
   @Get('oauth/42/callback')
   async loginWith42Callback(@Query('code') code: string, @Res() res: Response) {
-    // try {
-    //   const token = await this.authService.getTokenFrom42(code);
-
-    //   res.json(token);
-    // } catch (error) {
-    //   console.log('error', error);
-    // }
     try {
       const token = await this.authService.getTokenFrom42(code);
       const userInfo = await this.authService.getUserInfoFrom42(
@@ -63,7 +56,6 @@ export class AuthController {
       // res.cookie('user_idx', user.idx, { sameSite: 'lax' });
       res.cookie('token', newToken, { sameSite: 'lax' });
 
-      console.log('created', created);
       if (created == false) {
         if (user.tfa_enabled)
           res.redirect('http://localhost:5173/authentication');

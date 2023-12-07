@@ -167,8 +167,6 @@ export class GameGateway
     } catch (error) {
       socket.emit('error', error.message);
     }
-
-    console.log(NormalWaitingQueue);
   }
   @SubscribeMessage('cancelLadderQueue')
   cancelLadderQueue(
