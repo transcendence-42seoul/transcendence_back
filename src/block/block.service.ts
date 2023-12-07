@@ -82,4 +82,25 @@ export class BlockService {
 
     return blockedList;
   }
+
+  async getBlockedList(blockedIdx: number): Promise<number[]> {
+    const blocks = await this.blockRepository.find({
+      where: { blocked: blockedIdx },
+      relations: ['blocker'],
+    });
+
+    if (!blocks || blocks.length === 0) return [];
+
+    const blockerList: User[] = [];
+    for (const block of blocks) {
+      const user = await this.userRepository.findOne({
+        where: { idx: block.blocker.idx },
+      });
+      if (user) {
+        blockerList.push(user);
+      }
+    }
+
+    return blockerList.map((user) => user.idx);
+  }
 }
