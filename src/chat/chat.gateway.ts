@@ -285,9 +285,7 @@ export class ChatGateway
       await this.chatParticipantService.leaveChat(userIdx, chatIdx);
 
       const owner = await this.chatParticipantService.getChatOwner(chatIdx);
-      // console.log(owner);
-      if (owner.length === 0) {
-        console.log('aaaaaa');
+      if (!owner) {
         this.server.to(room).emit('ownerLeaveChat', chatIdx);
         this.appGateway.server.emit('chatRoomDeleted', chatIdx);
         await this.chatService.deleteChat(chatIdx);
@@ -489,30 +487,34 @@ export class ChatGateway
     const chatIdx = parseInt(body.chatIdx);
     const room = `room-${chatIdx}`;
     const blockedIdx = body.managedIdx;
+    const blockerIdx = socket.data.userIdx;
     console.log('blockChatMember', chatIdx, blockedIdx);
 
     try {
-      await this.chatParticipantService.leaveChat(blockedIdx, chatIdx);
+      const owners = await this.chatParticipantService.getChatOwner(chatIdx);
 
-      const participants =
-        await this.chatParticipantService.getChatParticipants(chatIdx);
+      if (owners[0].user.idx === blockerIdx) {
+        await this.chatParticipantService.leaveChat(blockedIdx, chatIdx);
+        const participants =
+          await this.chatParticipantService.getChatParticipants(chatIdx);
 
-      const filteredParticipants = participants.map((participant) => ({
-        idx: participant.idx,
-        role: participant.role,
-        user: {
-          idx: participant.user.idx,
-          nickname: participant.user.nickname,
-        },
-      }));
+        const filteredParticipants = participants.map((participant) => ({
+          idx: participant.idx,
+          role: participant.role,
+          user: {
+            idx: participant.user.idx,
+            nickname: participant.user.nickname,
+          },
+        }));
 
-      this.server
-        .to(room)
-        .emit('receiveChatParticipants', filteredParticipants);
+        this.server
+          .to(room)
+          .emit('receiveChatParticipants', filteredParticipants);
 
-      const blockedSockedId = onlineUsers[blockedIdx].id;
+        const blockedSockedId = onlineUsers[blockedIdx].id;
 
-      this.appGateway.server.to(blockedSockedId).emit('banned', chatIdx);
+        this.appGateway.server.to(blockedSockedId).emit('banned', chatIdx);
+      }
 
       return { status: 'success' };
     } catch (error) {

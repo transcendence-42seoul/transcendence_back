@@ -176,6 +176,19 @@ export class UserService {
     return user;
   }
 
+  async updateTFAEnabled(idx: number, tfa_enabled: boolean): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { idx } });
+    if (!user) throw new NotFoundException(`User with idx ${idx} not found`);
+
+    user.tfa_enabled = tfa_enabled;
+
+    try {
+      return await this.userRepository.save(user);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async updateTFA(
     idx: number,
     tfa_enabled: boolean,

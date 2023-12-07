@@ -89,6 +89,14 @@ export class UserController {
     return this.userService.updateStatus(idx, status);
   }
 
+  @Patch('/:idx/tfa-enabled')
+  async updateTFAEnabled(
+    @Param('idx', ParseIntPipe) idx: number,
+    @Body('tfa_enabled') tfa_enabled: boolean,
+  ): Promise<User> {
+    return this.userService.updateTFAEnabled(idx, tfa_enabled);
+  }
+
   @Patch('/:idx/tfa')
   async updateTFA(
     @Param('idx', ParseIntPipe) idx: number,
