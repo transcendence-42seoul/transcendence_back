@@ -8,9 +8,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserRepository } from 'src/user/user.repository';
 import { ChatMessage } from './chat.message.entity';
 import { ChatMessageRepository } from './chat.message.repository';
-import { Not, In } from 'typeorm';
 import { MuteRepository } from './mute/mute.repository';
 import { ChatParticipantRepository } from './chat.participant.repository';
+import { BlockService } from 'src/block/block.service';
 
 @Injectable()
 export class ChatMessageService {
@@ -25,6 +25,7 @@ export class ChatMessageService {
     private muteRepository: MuteRepository,
     @InjectRepository(UserRepository)
     private userRepository: UserRepository,
+    private blockService: BlockService,
   ) {}
 
   async createChatMessage(
@@ -73,6 +74,27 @@ export class ChatMessageService {
     );
   }
 
+  async checkChatMessage(
+    userIdx: number,
+    chatMessage: ChatMessage,
+  ): Promise<boolean> {
+    const blockList = await this.blockService.getBlockList(userIdx);
+    const blockIdxList = blockList.map((block) => block.idx);
+
+    const blockedIdxList = await this.blockService.getBlockedList(userIdx);
+
+    if (blockList.length > 0 && blockIdxList.includes(chatMessage.user.idx)) {
+      return false;
+    }
+    if (
+      blockedIdxList.length > 0 &&
+      blockedIdxList.includes(chatMessage.user.idx)
+    ) {
+      return false;
+    }
+    return true;
+  }
+
   async getChatMessages(
     chatIdx: number,
     userIdx: number,
@@ -86,14 +108,47 @@ export class ChatMessageService {
       throw new NotFoundException(`User with idx "${userIdx}" not found`);
     }
 
-    const chatMessages = await this.chatMessageRepository
-      .createQueryBuilder('chatMessage')
-      .leftJoinAndSelect('chatMessage.user', 'user')
-      .select(['chatMessage', 'user.idx', 'user.nickname'])
-      .where('chatMessage.chat.idx = :chatIdx', { chatIdx })
-      .orderBy('chatMessage.send_at', 'ASC')
-      .getMany();
+    // const blockList = await this.blockService.getBlockList(userIdx);
+    // const blockIdxList = blockList.map((block) => block.idx);
 
-    return chatMessages;
+    // const blockedIdxList = await this.blockService.getBlockedList(userIdx);
+
+    // let query = await this.chatMessageRepository
+    //   .createQueryBuilder('chatMessage')
+    //   .leftJoinAndSelect('chatMessage.user', 'user')
+    //   .select(['chatMessage', 'user.idx', 'user.nickname'])
+    //   .where('chatMessage.chat.idx = :chatIdx', { chatIdx });
+
+    const messages = await this.chatMessageRepository.find({
+      where: { chat: { idx: chatIdx } },
+      order: { send_at: 'ASC' },
+      relations: ['user'],
+    });
+
+    // 내코드
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const chatMessage = messages[i];
+      const isCheck = await this.checkChatMessage(userIdx, chatMessage);
+      if (!isCheck) {
+        messages.splice(i, 1); // 인덱스 i에서 요소를 제거
+      }
+    }
+
+    // if (blockList.length > 0) {
+    //   query = query.andWhere('user.idx NOT IN (:...blockIdxList)', {
+    //     blockIdxList,
+    //   });
+    // }
+    // if (blockedIdxList.length > 0) {
+    //   query = query.andWhere('user.idx NOT IN (:...blockedIdxList)', {
+    //     blockedIdxList,
+    //   });
+    // }
+
+    // const chatMessages = await query
+    //   .orderBy('chatMessage.send_at', 'ASC')
+    //   .getMany();
+
+    return messages;
   }
 }

@@ -1,15 +1,15 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserRepository } from 'src/user/user.repository';
+import { UserModule } from 'src/user/user.module';
 import { BlockController } from './block.controller';
 import { BlockRepository } from './block.repository';
 import { BlockService } from './block.service';
 import { Block } from './block.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Block])],
+  imports: [TypeOrmModule.forFeature([Block]), UserModule],
   controllers: [BlockController],
-  providers: [BlockService, BlockRepository, UserRepository],
-  exports: [BlockService],
+  providers: [BlockService, BlockRepository],
+  exports: [BlockService, BlockRepository],
 })
 export class BlockModule {}

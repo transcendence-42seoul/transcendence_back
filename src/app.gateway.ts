@@ -60,7 +60,7 @@ export class appGateway
     } catch (error) {
       this.logger.error(`${userIdx}의 offline 업데이트 실패`);
     }
-    this.logger.log('disconnected : ' + socket.id + ' in appGateway');
+    this.logger.log('disconnected : ' + socket.id + ' in appGateway' + userIdx);
 
     const onlineUserListPromises = Object.keys(onlineUsers).map(async (key) => {
       const user = await this.userService.findByIdx(parseInt(key));
@@ -283,7 +283,7 @@ export class appGateway
           .emit('notification', alarmDto);
       }
     } catch (error) {
-      console.log(error);
+      Logger.error(error.message);
     }
   }
 
@@ -338,8 +338,20 @@ export class appGateway
           .emit('notificationList', alarmDtos);
       }
 
-      const friendList = await this.friendService.getFriendList(requestedIdx);
-      const friendDtos = friendList.map((friend) => {
+      const requestedFriendList =
+        await this.friendService.getFriendList(requestedIdx);
+      const requestedFriendDtos = requestedFriendList.map((friend) => {
+        return {
+          idx: friend.idx,
+          nickname: friend.nickname,
+          profileImage: friend.avatar.image_data,
+        };
+      });
+
+      const senderFriendList = await this.friendService.getFriendList(
+        notification.sender_idx,
+      );
+      const senderFriendDtos = senderFriendList.map((friend) => {
         return {
           idx: friend.idx,
           nickname: friend.nickname,
@@ -350,20 +362,20 @@ export class appGateway
       if (onlineUsers[requestedIdx].id) {
         this.server
           .to(onlineUsers[requestedIdx].id)
-          .emit('updateFriendList', friendDtos);
+          .emit('updateFriendList', requestedFriendDtos);
 
         this.server
           .to(onlineUsers[requestedIdx].id)
-          .emit('receiveFriendUsers', friendDtos);
+          .emit('receiveFriendUsers', requestedFriendDtos);
       }
       if (onlineUsers[notification.sender_idx].id) {
         this.server
           .to(onlineUsers[notification.sender_idx].id)
-          .emit('updateFriendList', friendDtos);
+          .emit('updateFriendList', senderFriendDtos);
 
         this.server
           .to(onlineUsers[notification.sender_idx].id)
-          .emit('receiveFriendUsers', friendDtos);
+          .emit('receiveFriendUsers', senderFriendDtos);
       }
     } catch (error) {
       console.log(error);
@@ -406,7 +418,7 @@ export class appGateway
   @SubscribeMessage('deleteFriend')
   async deleteFriend(@MessageBody() body, @ConnectedSocket() socket: Socket) {
     const userIdx = socket.data.userIdx;
-    const friendIdx = body.friendIdx;
+    const friendIdx = body.managedIdx;
 
     try {
       await this.friendService.deleteFriend(userIdx, friendIdx);
@@ -496,7 +508,7 @@ export class appGateway
           .emit('notification', alarmDto);
       }
     } catch (error) {
-      console.log(error);
+      Logger.error(error.message);
     }
   }
 
@@ -543,31 +555,35 @@ export class appGateway
         await this.friendService.deleteFriend(blockerIdx, blockedIdx);
       }
 
-      // const blockedUsers = await this.blockService.getBlockList(blockerIdx);
+      if (onlineUsers[blockerIdx].id) {
+        const blockerFriendList =
+          await this.friendService.getFriendList(blockerIdx);
+        const blockerFriendDtos = blockerFriendList.map((friend) => {
+          return {
+            idx: friend.idx,
+            nickname: friend.nickname,
+            profileImage: friend.avatar.image_data,
+          };
+        });
+        this.server
+          .to(onlineUsers[blockerIdx].id)
+          .emit('updateFriendList', blockerFriendDtos);
+      }
 
-      // const onlineUserListPromises = Object.keys(onlineUsers).map(
-      //   async (key) => {
-      //     const userIdx = parseInt(key);
-      //     if (isNaN(userIdx)) {
-      //       // userIdx가 유효한 숫자가 아닌 경우 처리
-      //       return null;
-      //     }
-
-      //     if (blockedUsers.some((user) => user.idx === userIdx)) {
-      //       // 차단된 사용자는 제외
-      //       return null;
-      //     }
-
-      //     const user = await this.userService.findByIdx(userIdx);
-      //     return {
-      //       idx: userIdx,
-      //       nickname: user.nickname,
-      //     };
-      //   },
-      // );
-
-      // const onlineUserList = await Promise.all(onlineUserListPromises);
-      // this.server.emit('onlineUsers', onlineUserList);
+      if (onlineUsers[blockedIdx].id) {
+        const blockedFriendList =
+          await this.friendService.getFriendList(blockedIdx);
+        const blockedFriendDtos = blockedFriendList.map((friend) => {
+          return {
+            idx: friend.idx,
+            nickname: friend.nickname,
+            profileImage: friend.avatar.image_data,
+          };
+        });
+        this.server
+          .to(onlineUsers[blockedIdx].id)
+          .emit('updateFriendList', blockedFriendDtos);
+      }
     } catch (error) {
       console.log(error);
     }

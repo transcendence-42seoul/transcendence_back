@@ -4,12 +4,13 @@ import { AlarmService } from './alarm.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Alarm } from './alarm.entity';
 import { AlarmRepository } from './alarm.repository';
-import { UserRepository } from 'src/user/user.repository';
+import { UserModule } from 'src/user/user.module';
+import { BlockModule } from 'src/block/block.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Alarm])],
+  imports: [TypeOrmModule.forFeature([Alarm]), BlockModule, UserModule],
   controllers: [AlarmController],
-  providers: [AlarmService, AlarmRepository, UserRepository],
+  providers: [AlarmService, AlarmRepository],
   exports: [AlarmService],
 })
 export class AlarmModule {}

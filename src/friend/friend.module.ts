@@ -5,23 +5,23 @@ import { FriendRequestRepository } from './friend.request.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FriendRequest } from './friend.request.entity';
 import { FriendRequestPair } from './friend.request.pair.entity';
-import { UserRepository } from 'src/user/user.repository';
 import { FriendRequestPairRepository } from './friend.request.pair.repository';
-import { BlockRepository } from 'src/block/block.repository';
-import { AlarmService } from 'src/alarm/alarm.service';
-import { AlarmRepository } from 'src/alarm/alarm.repository';
+import { UserModule } from 'src/user/user.module';
+import { BlockModule } from 'src/block/block.module';
+import { AlarmModule } from 'src/alarm/alarm.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([FriendRequest, FriendRequestPair])],
+  imports: [
+    TypeOrmModule.forFeature([FriendRequest, FriendRequestPair]),
+    UserModule,
+    BlockModule,
+    AlarmModule,
+  ],
   controllers: [FriendController],
   providers: [
     FriendService,
     FriendRequestRepository,
     FriendRequestPairRepository,
-    UserRepository,
-    BlockRepository,
-    AlarmService,
-    AlarmRepository,
   ],
   exports: [FriendService],
 })

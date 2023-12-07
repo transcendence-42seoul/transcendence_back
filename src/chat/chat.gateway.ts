@@ -29,11 +29,13 @@ import { BanService } from './ban/ban.service';
 import { onlineUsers } from 'src/app.gateway';
 import { Role } from './chat.participant.entity';
 import { appGateway } from 'src/app.gateway';
+import { BlockService } from 'src/block/block.service';
 
 interface IChat {
   idx: number;
   content: string;
   send_at: Date;
+  room_idx: number;
   user: {
     idx: number;
     nickname: string;
@@ -52,6 +54,7 @@ export class ChatGateway
     private readonly userService: UserService,
     private readonly chatParticipantService: ChatParticipantService,
     private readonly chatMessageService: ChatMessageService,
+    private readonly blockService: BlockService,
     private readonly kickService: KickService,
     private readonly banService: BanService,
     private readonly muteService: MuteService,
@@ -60,16 +63,17 @@ export class ChatGateway
   private logger = new Logger('chats'); // 테스트용 다쓰면 지워도 됨.
 
   chatUsers: {
-    [key: number]: string;
+    [key: string]: number;
   } = {};
+
+  // chatUsers: {
+  //   [key: number]: Socket;
+  // } = {};
 
   handleDisconnect(@ConnectedSocket() socket: Socket) {
     this.logger.log('disconnected : ' + socket.id);
 
-    const token = socket.handshake.auth.token || socket.handshake.query.token;
-    const userData = this.authService.parsingJwtData(token);
-    const userIdx = userData.user_idx;
-    delete this.chatUsers[userIdx];
+    delete this.chatUsers[socket.id];
   }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
@@ -79,7 +83,8 @@ export class ChatGateway
     const userData = await this.authService.parsingJwtData(token);
     const userIdx = userData.user_idx;
 
-    this.chatUsers[userIdx] = socket.id;
+    this.chatUsers[socket.id] = userIdx;
+    // this.chatUsers[userIdx] = socket;
 
     if (token) {
       try {
@@ -200,9 +205,11 @@ export class ChatGateway
       if (error.message === `User "${userIdx}" are banned in this chat`) {
         const bannedSocketId = onlineUsers[userIdx].id;
         this.AppGateway.server.to(bannedSocketId).emit('isBan');
-      } else if (error.message === `You are blocked by owner`) {
-        const blockedSocketId = onlineUsers[userIdx].id;
-        this.AppGateway.server.to(blockedSocketId).emit('isBan');
+        // } else if (error.message === `You are blocked by owner`) {
+        //   const blockedSocketId = onlineUsers[userIdx].id;
+        //   this.AppGateway.server.to(blockedSocketId).emit('isBan');
+      } else if (error.message === 'Password is incorrect') {
+        // this.server.to()
       } else {
         socket.emit('showError', {
           message: error.message,
@@ -217,8 +224,8 @@ export class ChatGateway
     @MessageBody() chatMessageDto: ChatMessageDto,
     @ConnectedSocket() socket: Socket,
   ) {
-    const room = `room-${chatMessageDto.room_id}`;
     const message = chatMessageDto.message;
+    const userIdx = socket.data.userIdx;
 
     try {
       const chatMessage: ChatMessage =
@@ -228,11 +235,12 @@ export class ChatGateway
           message,
         );
 
-      const user = await this.userService.findByIdx(socket.data.userIdx);
+      const user = await this.userService.findByIdx(userIdx);
 
       const makeIChat: IChat = {
         idx: chatMessage.idx,
         content: chatMessage.content,
+        room_idx: chatMessage.chat.idx,
         send_at: chatMessage.send_at,
         user: {
           idx: chatMessage.user.idx,
@@ -240,7 +248,16 @@ export class ChatGateway
         },
       };
 
-      this.server.to(room).emit('receiveMessage', makeIChat);
+      const keys = Object.keys(this.chatUsers);
+      for (const socketId of keys) {
+        const eachUserIdx = this.chatUsers[socketId];
+        const cantSend = await this.chatMessageService.checkChatMessage(
+          eachUserIdx,
+          chatMessage,
+        );
+        if (!cantSend) continue;
+        this.server.to(socketId).emit('receiveMessage', makeIChat);
+      }
     } catch (error) {
       socket.emit('showError', {
         message: error.message,
@@ -259,6 +276,8 @@ export class ChatGateway
 
     try {
       await this.chatParticipantService.leaveChat(userIdx, chatIdx);
+      const chat = await this.chatService.getChatByIdx(chatIdx);
+      this.AppGateway.server.emit('chatRoomUpdate', chat);
 
       const owner = await this.chatParticipantService.getChatOwner(chatIdx);
       if (!owner) {
@@ -438,45 +457,45 @@ export class ChatGateway
     }
   }
 
-  @SubscribeMessage('blockChatMember')
-  async BlockChatMember(
-    @ConnectedSocket() socket: Socket,
-    @MessageBody() body: UserManagementDto,
-  ) {
-    const chatIdx = parseInt(body.chatIdx);
-    const room = `room-${chatIdx}`;
-    const blockedIdx = body.managedIdx;
-    const blockerIdx = socket.data.userIdx;
+  // @SubscribeMessage('blockChatMember')
+  // async BlockChatMember(
+  //   @ConnectedSocket() socket: Socket,
+  //   @MessageBody() body: UserManagementDto,
+  // ) {
+  //   const chatIdx = parseInt(body.chatIdx);
+  //   const room = `room-${chatIdx}`;
+  //   const blockedIdx = body.managedIdx;
+  //   const blockerIdx = socket.data.userIdx;
 
-    try {
-      const owners = await this.chatParticipantService.getChatOwner(chatIdx);
+  //   try {
+  //     const owners = await this.chatParticipantService.getChatOwner(chatIdx);
 
-      if (owners[0].user.idx === blockerIdx) {
-        await this.chatParticipantService.leaveChat(blockedIdx, chatIdx);
-        const participants =
-          await this.chatParticipantService.getChatParticipants(chatIdx);
+  //     if (owners[0].user.idx === blockerIdx) {
+  //       await this.chatParticipantService.leaveChat(blockedIdx, chatIdx);
+  //       const participants =
+  //         await this.chatParticipantService.getChatParticipants(chatIdx);
 
-        const filteredParticipants = participants.map((participant) => ({
-          idx: participant.idx,
-          role: participant.role,
-          user: {
-            idx: participant.user.idx,
-            nickname: participant.user.nickname,
-          },
-        }));
+  //       const filteredParticipants = participants.map((participant) => ({
+  //         idx: participant.idx,
+  //         role: participant.role,
+  //         user: {
+  //           idx: participant.user.idx,
+  //           nickname: participant.user.nickname,
+  //         },
+  //       }));
 
-        this.server
-          .to(room)
-          .emit('receiveChatParticipants', filteredParticipants);
+  //       this.server
+  //         .to(room)
+  //         .emit('receiveChatParticipants', filteredParticipants);
 
-        const blockedSockedId = onlineUsers[blockedIdx].id;
+  //       const blockedSockedId = onlineUsers[blockedIdx].id;
 
-        this.AppGateway.server.to(blockedSockedId).emit('banned', chatIdx);
-      }
+  //       this.AppGateway.server.to(blockedSockedId).emit('banned', chatIdx);
+  //     }
 
-      return { status: 'success' };
-    } catch (error) {
-      return { status: 'error', message: error.message };
-    }
-  }
+  //     return { status: 'success' };
+  //   } catch (error) {
+  //     return { status: 'error', message: error.message };
+  //   }
+  // }
 }

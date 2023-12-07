@@ -53,7 +53,7 @@ export class ChatParticipantService {
     // ban (check with chat)
     await this.checkBan(userIdx, chatIdx);
     // block (check with blocker)
-    await this.checkBlock(userIdx, chatIdx);
+    // await this.checkBlock(userIdx, chatIdx);
 
     if (!(await bcrypt.compare(password, chat.password))) {
       throw new NotFoundException(`Password is incorrect`);
@@ -94,10 +94,10 @@ export class ChatParticipantService {
       );
     }
     // block (check with blocker)
-    const owner = await this.chatParticipantRepository.findOne({
-      where: { chat: { idx: chatIdx }, role: Role.OWNER },
-      relations: ['user'],
-    });
+    // const owner = await this.chatParticipantRepository.findOne({
+    //   where: { chat: { idx: chatIdx }, role: Role.OWNER },
+    //   relations: ['user'],
+    // });
 
     const participant = await this.chatParticipantRepository.findOne({
       where: { user: { idx: userIdx }, chat: { idx: chatIdx } },
@@ -107,12 +107,12 @@ export class ChatParticipantService {
         `User with idx "${userIdx}" already joined chat with idx "${chatIdx}"`,
       );
 
-    const blockByOwner = owner.user.blocker;
-    for (let i = 0; i < blockByOwner.length; i++) {
-      if (blockByOwner[i].blocked === user.idx) {
-        throw new BadRequestException(`You are blocked by owner`);
-      }
-    }
+    // const blockByOwner = owner.user.blocker;
+    // for (let i = 0; i < blockByOwner.length; i++) {
+    //   if (blockByOwner[i].blocked === user.idx) {
+    //     throw new BadRequestException(`You are blocked by owner`);
+    //   }
+    // }
 
     if (chat.currentParticipant >= chat.limit)
       throw new BadRequestException(`Chat with idx "${chatIdx}" is full`);
