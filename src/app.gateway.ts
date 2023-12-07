@@ -313,7 +313,11 @@ export class appGateway
         AlarmType.GENERAL,
       );
 
-      await this.alarmService.createAlarm(notification.sender_idx, alarmDto);
+      const alarm = await this.alarmService.createAlarm(
+        notification.sender_idx,
+        alarmDto,
+      );
+      alarmDto.idx = alarm.idx;
 
       if (onlineUsers[notification.sender_idx].id) {
         this.server
@@ -516,6 +520,7 @@ export class appGateway
       });
 
       if (onlineUsers[userIdx].id) {
+        console.log(alarmDtos);
         this.server
           .to(onlineUsers[userIdx].id)
           .emit('notificationList', alarmDtos);

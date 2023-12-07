@@ -55,8 +55,9 @@ export class ChatParticipantService {
     // block (check with blocker)
     await this.checkBlock(userIdx, chatIdx);
 
-    if (!(await bcrypt.compare(password, chat.password)))
+    if (!(await bcrypt.compare(password, chat.password))) {
       throw new NotFoundException(`Password is incorrect`);
+    }
 
     if (chat.currentParticipant >= chat.limit)
       throw new BadRequestException(`Chat with idx "${chatIdx}" is full`);

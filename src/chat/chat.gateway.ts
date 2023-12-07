@@ -184,6 +184,7 @@ export class ChatGateway
 
       if (!isParticipate) {
         if (chat.type === ChatType.PRIVATE) {
+          console.log('password', password);
           await this.chatParticipantService.joinPrivateChat(
             userIdx,
             chatIdx,
@@ -222,6 +223,10 @@ export class ChatGateway
       } else if (error.message === `You are blocked by owner`) {
         const blockedSocketId = onlineUsers[userIdx].id;
         this.appGateway.server.to(blockedSocketId).emit('isBan');
+      } else {
+        socket.emit('showError', {
+          message: error.message,
+        });
       }
       return { status: 'error', message: error.message };
     }
@@ -276,8 +281,8 @@ export class ChatGateway
     @MessageBody() room_id: number,
     @ConnectedSocket() socket: Socket,
   ) {
-    console.log('leaveChat');
     const chatIdx = room_id;
+    console.log('chatIdx', chatIdx);
     const room = `room-${chatIdx}`;
     const userIdx = socket.data.userIdx;
 
