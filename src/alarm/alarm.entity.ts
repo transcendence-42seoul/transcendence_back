@@ -31,6 +31,9 @@ export class Alarm extends BaseEntity {
   @Column({ nullable: false })
   sender_idx: number; // 보내는 사람
 
+  @Column({ nullable: true })
+  room_idx: number;
+
   @Column({ type: 'text', nullable: false })
   content: string;
 

@@ -484,11 +484,11 @@ export class appGateway
         `${sender.nickname}님이 DM을 보냈습니다.`,
         AlarmType.DM,
       );
+      alarmDto.room_idx = room_id;
 
       const alarm = await this.alarmService.createAlarm(receiverIdx, alarmDto);
 
       alarmDto.idx = alarm.idx;
-      alarmDto.room_idx = room_id;
 
       if (onlineUsers[receiverIdx].id) {
         this.server

@@ -14,12 +14,14 @@ export class AlarmRepository extends Repository<Alarm> {
     sender_idx: number,
     content: string,
     type: AlarmType,
+    room_idx?: number,
   ): Promise<Alarm> {
     const alarm = this.create({
       receiver,
       sender_idx,
       content,
       type,
+      room_idx,
     });
     await this.save(alarm);
     return alarm;

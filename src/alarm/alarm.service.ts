@@ -37,9 +37,10 @@ export class AlarmService {
 
     return this.alarmRepository.createAlarm(
       receiver,
-      alarmDto.sender_idx, // 보내는 사람
+      alarmDto.sender_idx,
       alarmDto.content,
       alarmDto.type,
+      alarmDto.room_idx, // 보내는 사람
     );
   }
 
