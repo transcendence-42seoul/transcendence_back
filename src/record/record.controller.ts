@@ -23,8 +23,15 @@ export class RecordController {
   ) {}
 
   @Get('/:idx')
-  async findByIdx(@Param('idx', ParseIntPipe) idx: number) {
-    return await this.recordService.findByIdx(idx);
+  async findByIdx(@Param('idx', ParseIntPipe) idx: number, @Res() res) {
+    try {
+      const user = await this.userService.findByIdx(idx);
+      res.status(200).send(user.record);
+    } catch (error) {
+      console.log(error.message);
+      res.status(404).send(error.message);
+    }
+    return;
   }
 
   @Get()
