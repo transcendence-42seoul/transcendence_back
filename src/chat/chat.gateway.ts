@@ -358,7 +358,7 @@ export class ChatGateway
     try {
       this.chatService.leaveChatRoom(socket, `room-${room_id}`);
     } catch (error) {
-      console.log(error);
+      Logger.error(error.message);
     }
   }
 

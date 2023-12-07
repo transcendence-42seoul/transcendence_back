@@ -62,7 +62,6 @@ export class AuthController {
         else res.redirect('http://localhost:5173/main');
       } else res.redirect('http://localhost:5173/avatar-setting');
     } catch (error) {
-      console.log('error', error);
       res.status(500).send('Internal Server Error');
     }
   }
