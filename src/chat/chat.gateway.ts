@@ -194,14 +194,9 @@ export class ChatGateway
       this.server
         .to(room)
         .emit('receiveChatParticipants', filteredParticipants);
+
       return { status: 'success' };
     } catch (error) {
-      if (error.message === 'Password is incorrect') {
-      } else {
-        socket.emit('showError', {
-          message: error.message,
-        });
-      }
       return { status: 'error', message: error.message };
     }
   }

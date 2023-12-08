@@ -145,6 +145,21 @@ export class ChatParticipantService {
     }));
   }
 
+  async isParticipant(chatIdx: number, userIdx: number): Promise<boolean> {
+    const chat = await this.chatRepository.findOne({ where: { idx: chatIdx } });
+    if (!chat)
+      throw new NotFoundException(`Chat with idx "${chatIdx}" not found`);
+    const user = await this.userRepository.findOne({ where: { idx: userIdx } });
+    if (!user)
+      throw new NotFoundException(`User with idx "${userIdx}" not found`);
+
+    const participant = await this.chatParticipantRepository.findOne({
+      where: { chat: { idx: chatIdx }, user: { idx: userIdx } },
+    });
+    if (participant) return true;
+    return false;
+  }
+
   async getChatOwner(chatIdx: number): Promise<ChatParticipant> {
     const chat = await this.chatRepository.findOne({ where: { idx: chatIdx } });
     if (!chat)

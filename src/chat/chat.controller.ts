@@ -98,6 +98,14 @@ export class ChatController {
     return await this.chatParticipantService.getChatParticipants(chatIdx);
   }
 
+  @Get('/participant/:chatIdx/:userIdx')
+  async isParticipant(
+    @Param('chatIdx', ParseIntPipe) chatIdx: number,
+    @Param('userIdx', ParseIntPipe) userIdx: number,
+  ): Promise<boolean> {
+    return await this.chatParticipantService.isParticipant(chatIdx, userIdx);
+  }
+
   @Delete('/:idx')
   async deleteChat(@Param('idx', ParseIntPipe) idx: number): Promise<void> {
     await this.chatService.deleteChat(idx);

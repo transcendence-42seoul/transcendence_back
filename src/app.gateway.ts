@@ -288,7 +288,7 @@ export class appGateway
   }
 
   @SubscribeMessage('acceptFriendRequest')
-  async acceptFirendRequest(
+  async acceptFriendRequest(
     @MessageBody() notificationIdx: number,
     @ConnectedSocket() socket: Socket,
   ) {
