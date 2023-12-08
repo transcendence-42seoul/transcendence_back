@@ -5,6 +5,7 @@ import { UserRepository } from 'src/user/user.repository';
 import { ChatParticipantRepository } from './chat.participant.repository';
 import { Chat, ChatType } from './chat.entity';
 import { Socket } from 'socket.io';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class ChatService {
@@ -57,7 +58,9 @@ export class ChatService {
       chat.password = null;
     } else {
       chat.type = ChatType.PRIVATE;
-      chat.password = password;
+      const salt = await bcrypt.genSalt();
+      const hashedPassword = await bcrypt.hash(password, salt);
+      chat.password = hashedPassword;
     }
 
     try {
