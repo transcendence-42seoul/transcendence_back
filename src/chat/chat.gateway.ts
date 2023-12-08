@@ -66,10 +66,6 @@ export class ChatGateway
     [key: string]: number;
   } = {};
 
-  // chatUsers: {
-  //   [key: number]: Socket;
-  // } = {};
-
   handleDisconnect(@ConnectedSocket() socket: Socket) {
     this.logger.log('disconnected : ' + socket.id);
 
@@ -77,14 +73,11 @@ export class ChatGateway
   }
 
   async handleConnection(@ConnectedSocket() socket: Socket) {
-    this.logger.log('connected : ' + socket.id);
-
     const token = socket.handshake.auth.token;
     const userData = await this.authService.parsingJwtData(token);
     const userIdx = userData.user_idx;
 
     this.chatUsers[socket.id] = userIdx;
-    // this.chatUsers[userIdx] = socket;
 
     if (token) {
       try {
@@ -98,6 +91,7 @@ export class ChatGateway
       this.logger.error('No token provided');
       socket.disconnect();
     }
+    this.logger.log('connected : ' + socket.id + ' ' + userIdx);
   }
 
   afterInit() {
@@ -265,6 +259,22 @@ export class ChatGateway
     }
   }
 
+  async receiveChatParticipants(chatIdx: number) {
+    const participants =
+      await this.chatParticipantService.getChatParticipants(chatIdx);
+
+    const filteredParticipants = participants.map((participant) => ({
+      idx: participant.idx,
+      role: participant.role,
+      user: {
+        idx: participant.user.idx,
+        nickname: participant.user.nickname,
+      },
+    }));
+
+    return filteredParticipants;
+  }
+
   @SubscribeMessage('leaveChat')
   async handleLeaveChat(
     @MessageBody() room_id: number,
@@ -286,17 +296,7 @@ export class ChatGateway
         await this.chatService.deleteChat(chatIdx);
       }
 
-      const participants =
-        await this.chatParticipantService.getChatParticipants(chatIdx);
-
-      const filteredParticipants = participants.map((participant) => ({
-        idx: participant.idx,
-        role: participant.role,
-        user: {
-          idx: participant.user.idx,
-          nickname: participant.user.nickname,
-        },
-      }));
+      const filteredParticipants = await this.receiveChatParticipants(chatIdx);
 
       this.server
         .to(room)
@@ -313,6 +313,7 @@ export class ChatGateway
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: UserManagementDto,
   ) {
+    const room = `room-${body.chatIdx}`;
     const chatIdx = parseInt(body.chatIdx);
     const kickedIdx = body.managedIdx;
     const kickerIdx = socket.data.userIdx;
@@ -321,6 +322,12 @@ export class ChatGateway
       await this.kickService.kickParticipant(chatIdx, kickerIdx, kickedIdx);
       const kickedSocketId = onlineUsers[kickedIdx].id;
       this.AppGateway.server.to(kickedSocketId).emit('kicked', chatIdx);
+
+      const filteredParticipants = await this.receiveChatParticipants(chatIdx);
+
+      this.server
+        .to(room)
+        .emit('receiveChatParticipants', filteredParticipants);
     } catch (error) {
       socket.emit('showError', {
         message: error.message,
@@ -334,6 +341,7 @@ export class ChatGateway
     @ConnectedSocket() socket: Socket,
     @MessageBody() body: UserManagementDto,
   ) {
+    const room = `room-${body.chatIdx}`;
     const chatIdx = parseInt(body.chatIdx);
     const bannedIdx = body.managedIdx;
     const bannerIdx = socket.data.userIdx;
@@ -342,6 +350,12 @@ export class ChatGateway
       await this.banService.banUser(chatIdx, bannerIdx, bannedIdx);
       const bannedSocketId = onlineUsers[bannedIdx].id;
       this.AppGateway.server.to(bannedSocketId).emit('banned', chatIdx);
+
+      const filteredParticipants = await this.receiveChatParticipants(chatIdx);
+
+      this.server
+        .to(room)
+        .emit('receiveChatParticipants', filteredParticipants);
     } catch (error) {
       socket.emit('showError', {
         message: error.message,
