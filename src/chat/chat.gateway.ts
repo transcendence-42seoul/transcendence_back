@@ -196,14 +196,7 @@ export class ChatGateway
         .emit('receiveChatParticipants', filteredParticipants);
       return { status: 'success' };
     } catch (error) {
-      if (error.message === `User "${userIdx}" are banned in this chat`) {
-        const bannedSocketId = onlineUsers[userIdx].id;
-        this.AppGateway.server.to(bannedSocketId).emit('isBan');
-        // } else if (error.message === `You are blocked by owner`) {
-        //   const blockedSocketId = onlineUsers[userIdx].id;
-        //   this.AppGateway.server.to(blockedSocketId).emit('isBan');
-      } else if (error.message === 'Password is incorrect') {
-        // this.server.to()
+      if (error.message === 'Password is incorrect') {
       } else {
         socket.emit('showError', {
           message: error.message,
@@ -253,9 +246,18 @@ export class ChatGateway
         this.server.to(socketId).emit('receiveMessage', makeIChat);
       }
     } catch (error) {
-      socket.emit('showError', {
-        message: error.message,
-      });
+      if (
+        error.message ===
+        `User with idx "${userIdx}" is muted in chat "${chatMessageDto.room_id}"`
+      ) {
+        socket.emit('showMuteError', {
+          message: error.message,
+        });
+      } else {
+        socket.emit('showError', {
+          message: error.message,
+        });
+      }
     }
   }
 

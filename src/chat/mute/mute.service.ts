@@ -66,17 +66,17 @@ export class MuteService {
       );
     }
 
-    // 중복 검사
     const existMute = await this.muteRepository.findOne({
       where: {
         chat: { idx: chatIdx },
         muted: { idx: mutedIdx },
       },
     });
+
     if (existMute) {
-      throw new BadRequestException(
-        `Mute with muted "${mutedIdx}" in chat "${chatIdx}" already exist`,
-      );
+      if (existMute.unmute_timestamp < new Date(new Date().getTime())) {
+        await this.deleteMute(chatIdx, muterIdx, mutedIdx);
+      } else return;
     }
 
     const managers = await this.chatParticipantRepository.find({
