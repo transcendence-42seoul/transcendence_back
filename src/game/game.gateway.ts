@@ -48,6 +48,10 @@ export class GameGateway
   ) {}
   private logger = new Logger('games');
 
+  gameUsers: {
+    [key: number]: Socket;
+  } = {};
+
   clearSocketInAllQueue(socket: Socket) {
     const normalIndex = NormalWaitingQueue.findIndex((element) => {
       return element[0] === socket;
@@ -63,7 +67,12 @@ export class GameGateway
     }
   }
 
-  handleDisconnect(@ConnectedSocket() socket: Socket) {
+  async handleDisconnect(@ConnectedSocket() socket: Socket) {
+    const token = socket.handshake.auth.token;
+    const userData = await this.authService.parsingJwtData(token);
+    const userIdx = userData.user_idx;
+
+    delete this.gameUsers[userIdx];
     // queue에서 나가기
     let index = NormalWaitingQueue.findIndex((element) => {
       return element[0] === socket;
@@ -96,12 +105,12 @@ export class GameGateway
       if (!data) {
         throw new UnauthorizedException('Unauthorized access');
       }
-
+      this.gameUsers[data.user_idx] = socket;
       const game = await this.gameService.getUserGame(data.user_idx);
       if (game) {
         socket.join(game.room_id);
       }
-      if (game) this.logger.log('connected : ' + socket.id);
+      this.logger.log('connected : ' + socket.id + ' ' + data.user_idx);
     } catch (error) {
       socket.emit('error', error.message);
       socket.disconnect();
@@ -249,11 +258,14 @@ export class GameGateway
       });
       hostData.socket.emit('createGameSuccess', game);
       guestData.socket.emit('createGameSuccess', game);
-
+      this.gameUsers[hostData.idx]?.join(game.room_id);
+      this.gameUsers[guestData.idx]?.join(game.room_id);
       let count = COUNT_DOWN_TIME;
       this.server.to(game.room_id).emit('countDown', count);
       const countDownInterval = setInterval(async () => {
         count--;
+        this.gameUsers[hostData.idx]?.join(game.room_id);
+        this.gameUsers[guestData.idx]?.join(game.room_id);
         this.server.to(game.room_id).emit('countDown', count);
         if (count === 0) {
           clearInterval(countDownInterval);
@@ -312,22 +324,22 @@ export class GameGateway
     }
   }
 
-  acceptChallengeMatch(
-    @MessageBody() body: JoinRoomDto,
-    @ConnectedSocket() socket: Socket,
-  ) {
-    this.gameService.joinGameRoom(socket, body.room_id);
-    this.logger.log(socket.id + ' join in ' + body.room_id);
-  }
+  // acceptChallengeMatch(
+  //   @MessageBody() body: JoinRoomDto,
+  //   @ConnectedSocket() socket: Socket,
+  // ) {
+  //   this.gameService.joinGameRoom(socket, body.room_id);
+  //   this.logger.log(socket.id + ' join in ' + body.room_id);
+  // }
 
-  @SubscribeMessage('joinGame')
-  joinGame(
-    @MessageBody() body: JoinRoomDto,
-    @ConnectedSocket() socket: Socket,
-  ) {
-    this.gameService.joinGameRoom(socket, body.room_id);
-    this.logger.log(socket.id + ' join in ' + body.room_id);
-  }
+  // @SubscribeMessage('joinGame')
+  // joinGame(
+  //   @MessageBody() body: JoinRoomDto,
+  //   @ConnectedSocket() socket: Socket,
+  // ) {
+  //   this.gameService.joinGameRoom(socket, body.room_id);
+  //   this.logger.log(socket.id + ' join in ' + body.room_id);
+  // }
 
   @SubscribeMessage('keyEvent')
   keyEvent(@MessageBody() body: KyeEventDto) {
@@ -348,6 +360,15 @@ export class GameGateway
     clearInterval(GameStore[body.room_id].intervalId);
     this.deleteGame(body.room_id);
     this.logger.log('game end in ' + body.room_id);
+  }
+
+  @SubscribeMessage('getGameInfo')
+  async getGameInfo(@ConnectedSocket() socket: Socket) {
+    const token = socket.handshake.auth.token;
+    const userData = await this.authService.parsingJwtData(token);
+    const userIdx = userData.user_idx;
+    const game = await this.gameService.getUserGame(userIdx);
+    return game;
   }
 
   deleteGame(room_id: string) {
