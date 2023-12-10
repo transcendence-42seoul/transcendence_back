@@ -17,9 +17,10 @@ export class GameController {
     try {
       const userIdx = req.user.user_idx;
       const game = await this.gameService.getUserGame(userIdx);
+      if (game === null) throw new Error();
       res.status(200).send(game);
     } catch (error) {
-      res.status(401).send('game 정보가 없습니다. ');
+      res.status(401).send('game 정보가 없습니다.');
     }
   }
 }

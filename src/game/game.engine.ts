@@ -9,7 +9,7 @@ export enum DIRECTION {
   RIGHT = 4,
 }
 
-const ROUND_SCORE = 2;
+const ROUND_SCORE = 5;
 const ROUNDS: number[] = [ROUND_SCORE];
 
 const canvasWidth = 1400;

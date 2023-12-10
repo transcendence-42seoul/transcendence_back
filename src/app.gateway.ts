@@ -81,7 +81,10 @@ export class appGateway
     const userIdx = userData.user_idx;
     onlineUsers[userIdx] = socket;
     try {
-      await this.userService.updateStatus(userIdx, UserStatus.ONLINE);
+      const game = await this.gameService.getUserGame(userIdx);
+      if (game)
+        await this.userService.updateStatus(userIdx, UserStatus.PLAYING);
+      else await this.userService.updateStatus(userIdx, UserStatus.ONLINE);
     } catch (error) {
       this.logger.error(`${userIdx}의 offline 업데이트 실패`);
     }

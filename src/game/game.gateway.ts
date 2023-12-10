@@ -109,6 +109,8 @@ export class GameGateway
       const game = await this.gameService.getUserGame(data.user_idx);
       if (game) {
         socket.join(game.room_id);
+        await this.userService.updateStatus(data.user_idx, UserStatus.PLAYING);
+        socket.emit('getGameInfo', game);
       }
       this.logger.log('connected : ' + socket.id + ' ' + data.user_idx);
     } catch (error) {
@@ -142,7 +144,7 @@ export class GameGateway
       if (body.mode === 'normal') {
         NormalWaitingQueue.push([socket, data.user_idx]);
         if (NormalWaitingQueue.length >= 2) {
-          await this.createMatch(
+          await this.createMatchWithoutReady(
             GameMode.LADDER_NORMAL,
             {
               socket: NormalWaitingQueue[0][0],
@@ -158,7 +160,7 @@ export class GameGateway
       } else if (body.mode === 'hard') {
         HardWaitingQueue.push([socket, data.user_idx]);
         if (HardWaitingQueue.length >= 2) {
-          this.createMatch(
+          this.createMatchWithoutReady(
             GameMode.LADDER_HARD,
             {
               socket: HardWaitingQueue[0][0],
@@ -222,7 +224,7 @@ export class GameGateway
       },
     };
     try {
-      await this.createMatch(
+      await this.createMatchWithoutReady(
         gameStatus.gameMode,
         gameStatus.hostData,
         gameStatus.guestData,
@@ -232,7 +234,7 @@ export class GameGateway
     }
   }
 
-  async createMatch(
+  async createMatchWithReady(
     gameMode: GameModeType,
     hostData: {
       socket: Socket;
@@ -269,14 +271,63 @@ export class GameGateway
         this.server.to(game.room_id).emit('countDown', count);
         if (count === 0) {
           clearInterval(countDownInterval);
-          this.start(game.room_id, gameMode);
+          delete this.gameUsers[hostData.idx];
+          delete this.gameUsers[guestData.idx];
           await this.userService.updateStatus(hostData.idx, UserStatus.PLAYING);
           await this.userService.updateStatus(
             guestData.idx,
             UserStatus.PLAYING,
           );
+          this.start(game.room_id, gameMode);
         }
       }, 1000);
+      this.logger.log(
+        `create game ${hostData.idx}, ${guestData.idx} in ${game.room_id}`,
+      );
+    } catch (error) {
+      throw Error("can't create game");
+    }
+  }
+
+  async createMatchWithoutReady(
+    gameMode: GameModeType,
+    hostData: {
+      socket: Socket;
+      idx: number;
+    },
+    guestData: {
+      socket: Socket;
+      idx: number;
+    },
+  ) {
+    try {
+      if (
+        hostData === undefined ||
+        guestData === undefined ||
+        hostData.idx === guestData.idx
+      ) {
+        throw new UnauthorizedException('Unauthorized access');
+      }
+      const game = await this.gameService.createGame({
+        game_mode: gameMode,
+        gameHost: hostData.idx,
+        gameGuest: guestData.idx,
+      });
+      this.gameUsers[hostData.idx]?.join(game.room_id);
+      this.gameUsers[guestData.idx]?.join(game.room_id);
+      console.log(hostData.idx, guestData.idx);
+      await this.userService.updateStatus(hostData.idx, UserStatus.PLAYING);
+      await this.userService.updateStatus(guestData.idx, UserStatus.PLAYING);
+      console.log(game);
+      console.log(game.game_host);
+
+      game.game_host.status = UserStatus.PLAYING;
+      game.game_guest.status = UserStatus.PLAYING;
+      hostData.socket.emit('createGameSuccess', game);
+      guestData.socket.emit('createGameSuccess', game);
+      this.gameUsers[hostData.idx]?.emit('startGame');
+      this.gameUsers[guestData.idx]?.emit('startGame');
+      this.start(game.room_id, gameMode);
       this.logger.log(
         `create game ${hostData.idx}, ${guestData.idx} in ${game.room_id}`,
       );
